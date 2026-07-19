@@ -1,0 +1,136 @@
+---
+import '../styles/global.css';
+import { useTranslations, localizePath, type Lang } from '../i18n/utils';
+import { ui } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const site = Astro.site ?? new URL('https://peliculle.com');
+const canonical = new URL(localizePath(lang), site);
+const alternates = (Object.keys(ui) as Lang[]).map((l) => ({
+  lang: l,
+  href: new URL(localizePath(l), site).href,
+}));
+
+// JSON-LD : l'app + la FAQ (rich results)
+const appJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Peliculle',
+  operatingSystem: 'iOS',
+  applicationCategory: 'PhotographyApplication',
+  description: t('meta.description'),
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+  url: canonical.href,
+};
+
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [1, 2, 3, 4, 5].map((i) => ({
+    '@type': 'Question',
+    name: t(`faq.${i}.q` as Parameters<typeof t>[0]),
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: t(`faq.${i}.a` as Parameters<typeof t>[0]),
+    },
+  })),
+};
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Thème : choix mémorisé sinon préférence système. Inline et avant le
+         CSS pour peindre directement dans le bon thème (pas de flash). -->
+    <script is:inline>
+      (() => {
+        let theme;
+        try {
+          theme = localStorage.getItem('theme');
+        } catch {
+          theme = null;
+        }
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <title>{t('meta.title')}</title>
+    <meta name="description" content={t('meta.description')} />
+    <link rel="canonical" href={canonical.href} />
+    {alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
+    <link rel="alternate" hreflang="x-default" href={new URL('/', site).href} />
+
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eef0f4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#080a0e" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Peliculle" />
+    <meta property="og:title" content={t('meta.title')} />
+    <meta property="og:description" content={t('meta.description')} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:locale" content={lang === 'fr' ? 'fr_FR' : 'en_US'} />
+    <meta property="og:image" content={new URL('/og-image.png', site).href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Pelicull(e) — trier ses photos depuis la carte SD, sur iPhone" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={t('meta.title')} />
+    <meta name="twitter:description" content={t('meta.description')} />
+    <meta name="twitter:image" content={new URL('/og-image.png', site).href} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(appJsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
+  </head>
+  <body>
+    <slot />
+    <script>
+      // Mesure d'audience minimaliste : une ligne par page vue, sans cookie,
+      // sans identifiant. Table Supabase en insertion seule (RLS).
+      import { SUPABASE_URL, SUPABASE_KEY } from '../config';
+
+      const seenKey = `pv:${location.pathname}`;
+      if (location.hostname !== 'localhost' && !sessionStorage.getItem(seenKey)) {
+        sessionStorage.setItem(seenKey, '1');
+        let referrer = '';
+        try {
+          referrer = document.referrer ? new URL(document.referrer).hostname : '';
+        } catch {
+          referrer = '';
+        }
+        fetch(`${SUPABASE_URL}/rest/v1/peliculle_pageviews`, {
+          method: 'POST',
+          keepalive: true,
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            path: location.pathname.slice(0, 200),
+            lang: document.documentElement.lang,
+            referrer: referrer === location.hostname ? '' : referrer.slice(0, 200),
+          }),
+        }).catch(() => {});
+      }
+    </script>
+  </body>
+</html>

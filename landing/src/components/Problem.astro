@@ -1,0 +1,82 @@
+---
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const items = [1, 2, 3].map((i) => ({
+  title: t(`problem.${i}.title`),
+  text: t(`problem.${i}.text`),
+}));
+---
+
+<section class="section section--dim" id="problem">
+  <div class="container">
+    <h2 class="section-title" data-reveal>
+      {t('problem.title')}<br />
+      <span class="accent">{t('problem.title.accent')}</span>
+    </h2>
+
+    <div class="problem-grid" data-reveal-group>
+      {
+        items.map((item, index) => (
+          <article class="problem-card">
+            <span class="problem-index">0{index + 1}</span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))
+      }
+    </div>
+
+    <p class="problem-punch" data-reveal>
+      {t('problem.punch')}
+      <strong class="accent">{t('problem.punch.accent')}</strong>
+    </p>
+  </div>
+</section>
+
+<style>
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.2rem;
+    margin-block: 2.6rem;
+  }
+
+  .problem-card {
+    background: var(--paper-raised);
+    border-radius: var(--radius-lg);
+    padding: 1.8rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .problem-index {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+  }
+
+  .problem-card h3 {
+    font-size: var(--text-lg);
+    letter-spacing: -0.015em;
+    margin-block: 0.5rem 0.4rem;
+  }
+
+  .problem-card p {
+    color: var(--ink-soft);
+    font-size: var(--text-sm);
+  }
+
+  .problem-punch {
+    font-size: var(--text-xl);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    max-width: 28em;
+    text-wrap: balance;
+  }
+</style>

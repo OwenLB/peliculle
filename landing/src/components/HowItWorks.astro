@@ -1,0 +1,326 @@
+---
+import AppShot from './AppShot.astro';
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const steps = [1, 2, 3].map((i) => ({
+  title: t(`how.${i}.title`),
+  text: t(`how.${i}.text`),
+}));
+
+// Les trois étapes, illustrées par de vraies captures de l'app
+// (paires clair/sombre — voir AppShot).
+const screens = ['grille', 'swipe-garder', 'passe-terminee'];
+---
+
+<section class="section" id="how">
+  <div class="container how-inner" data-how>
+    <div class="how-copy">
+      <p class="eyebrow" data-reveal>01 · 02 · 03</p>
+      <h2 class="section-title" data-reveal>{t('how.title')}</h2>
+
+      <div class="how-tabs" role="tablist" aria-orientation="vertical" data-reveal-group>
+        {
+          steps.map((step, index) => (
+            <button
+              class:list={['how-tab', index === 0 && 'is-active']}
+              role="tab"
+              id={`how-tab-${index}`}
+              aria-selected={index === 0 ? 'true' : 'false'}
+              aria-controls={`how-panel-${index}`}
+              data-how-tab={index}
+            >
+              <span class="how-number">{index + 1}</span>
+              <span class="how-tab-body">
+                <span class="how-tab-title">{step.title}</span>
+                <span class="how-tab-text">{step.text}</span>
+              </span>
+              <span class="how-tab-progress" aria-hidden="true" />
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="how-stage" data-reveal>
+      <!-- 1 · Branchez : la grille, dix secondes après le branchement
+           2 · Triez : le swipe « Garder » du tri rapide
+           3 · Gardez : la passe terminée, le bilan -->
+      {
+        screens.map((name, index) => (
+          <div
+            class:list={['how-panel', index === 0 && 'is-active']}
+            role="tabpanel"
+            id={`how-panel-${index}`}
+            aria-labelledby={`how-tab-${index}`}
+            data-how-panel={index}
+            hidden={index !== 0}
+          >
+            <figure class="how-phone">
+              <div class="how-screen">
+                <AppShot name={name} width={800} height={1614} bar />
+              </div>
+            </figure>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .how-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(2.5rem, 2rem + 4vw, 6rem);
+  }
+
+  /* --- Les trois étapes, cliquables ---------------------------------------- */
+
+  .how-tabs {
+    margin-top: 2.2rem;
+    display: grid;
+  }
+
+  .how-tab {
+    position: relative;
+    display: flex;
+    gap: 1.1rem;
+    align-items: flex-start;
+    text-align: left;
+    padding: 1.3rem 1.1rem 1.5rem;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .how-tab:last-child {
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .how-tab:hover {
+    background: var(--glass);
+  }
+
+  .how-number {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border-strong);
+    color: var(--text-faint);
+    font-weight: 700;
+    font-size: var(--text-sm);
+    transition:
+      background 0.35s,
+      color 0.35s;
+  }
+
+  .how-tab.is-active .how-number {
+    background: var(--text);
+    border-color: transparent;
+    color: var(--bg);
+  }
+
+  .how-tab-title {
+    display: block;
+    font-size: var(--text-lg);
+    font-weight: 650;
+    letter-spacing: -0.015em;
+    color: var(--text-soft);
+    transition: color 0.35s;
+  }
+
+  .how-tab.is-active .how-tab-title {
+    color: var(--text);
+  }
+
+  .how-tab-text {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 30em;
+
+    /* Repliée quand l'étape est inactive : la liste respire */
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    opacity: 0.55;
+    transition: opacity 0.35s;
+  }
+
+  .how-tab.is-active .how-tab-text {
+    -webkit-line-clamp: 4;
+    opacity: 1;
+  }
+
+  /* Barre de progression de l'auto-avance, sur l'étape active seulement */
+  .how-tab-progress {
+    position: absolute;
+    left: 0;
+    top: -1px;
+    height: 1px;
+    width: 0;
+    background: var(--text);
+    opacity: 0.7;
+  }
+
+  .how-tab.is-active .how-tab-progress {
+    animation: how-progress var(--how-delay, 6s) linear forwards;
+  }
+
+  @keyframes how-progress {
+    to {
+      width: 100%;
+    }
+  }
+
+  /* --- La scène : les panneaux qui se fondent (blur crossfade) -------------- */
+
+  /* Hauteur bornée par la scène elle-même : les trois panneaux occupent
+     exactement le même volume, rien ne bouge quand on change d'étape. */
+  .how-stage {
+    display: grid;
+    height: clamp(24rem, 20rem + 14vw, 30rem);
+  }
+
+  .how-panel {
+    grid-area: 1 / 1;
+    height: 100%;
+    min-height: 0;
+    opacity: 0;
+    filter: blur(16px);
+    transform: translateY(16px) scale(0.965);
+    pointer-events: none;
+    transition:
+      opacity 0.45s var(--ease-out),
+      filter 0.45s var(--ease-out),
+      transform 0.45s var(--ease-out);
+  }
+
+  /* Handoff : le panneau sortant s'efface d'abord, l'entrant arrive avec un
+     léger temps de retard — le flou fait le raccord entre les deux. */
+  .how-panel.is-active {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    transition-duration: 0.65s;
+    transition-delay: 0.14s;
+  }
+
+  /* Le cadre iPhone, même famille que celui du hero, dimensionné par la scène */
+  .how-phone {
+    height: 100%;
+    aspect-ratio: 9 / 18.95;
+    margin-inline: auto;
+    border-radius: 2.4rem;
+    background: linear-gradient(160deg, #1a1e26 0%, #0c0e13 100%);
+    padding: 0.4rem;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      var(--shadow-lift);
+  }
+
+  .how-screen {
+    position: relative;
+    height: 100%;
+    border-radius: 2rem;
+    overflow: hidden;
+    background: #000;
+  }
+
+  @media (max-width: 56rem) {
+    .how-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .how-stage {
+      order: -1;
+    }
+
+    .how-tab {
+      padding-inline: 0.4rem;
+    }
+  }
+</style>
+
+<script>
+  // Onglets du workflow : clic pour choisir, auto-avance quand la section est
+  // visible. La transition (opacity + blur) est portée par le CSS.
+  const AUTO_DELAY = 6000;
+
+  document.querySelectorAll<HTMLElement>('[data-how]').forEach((root) => {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-how-tab]'));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-how-panel]'));
+    if (!tabs.length || tabs.length !== panels.length) return;
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let current = 0;
+    let timer: ReturnType<typeof setInterval> | undefined;
+
+    root.style.setProperty('--how-delay', `${AUTO_DELAY}ms`);
+
+    const select = (index: number) => {
+      current = index;
+      tabs.forEach((tab, i) => {
+        tab.classList.toggle('is-active', i === index);
+        tab.setAttribute('aria-selected', i === index ? 'true' : 'false');
+        // Redémarre l'animation de la barre de progression
+        const progress = tab.querySelector<HTMLElement>('.how-tab-progress');
+        if (progress && i === index) {
+          progress.style.animation = 'none';
+          void progress.offsetWidth;
+          progress.style.animation = '';
+        }
+      });
+      panels.forEach((panel, i) => {
+        panel.classList.toggle('is-active', i === index);
+        if (i === index) panel.removeAttribute('hidden');
+        else panel.setAttribute('hidden', '');
+      });
+    };
+
+    // `hidden` casserait le crossfade : on le retire dès que JS est là et on
+    // laisse opacity/pointer-events faire le travail.
+    panels.forEach((panel) => panel.removeAttribute('hidden'));
+
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = undefined;
+    };
+
+    const start = () => {
+      if (reducedMotion || timer) return;
+      timer = setInterval(() => select((current + 1) % tabs.length), AUTO_DELAY);
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => {
+        select(index);
+        stop();
+        start(); // repart de zéro après un choix manuel
+      });
+    });
+
+    // Auto-avance seulement quand la section est à l'écran
+    new IntersectionObserver(
+      (entries) => entries.forEach((entry) => (entry.isIntersecting ? start() : stop())),
+      { threshold: 0.35 }
+    ).observe(root);
+  });
+</script>

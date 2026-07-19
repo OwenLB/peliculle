@@ -1,0 +1,23 @@
+# Configuration Netlify de la landing page.
+# La « base directory » est réglée sur `landing` dans l'UI Netlify, donc tous
+# les chemins ci-dessous sont relatifs à ce dossier.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Les assets fingerprintés d'Astro (hash dans le nom) peuvent être mis en
+# cache indéfiniment.
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Images statiques (non fingerprintées) : cache d'une semaine.
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"

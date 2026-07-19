@@ -1,0 +1,177 @@
+---
+/**
+ * Formulaire de liste d'attente — emails stockés dans Supabase
+ * (table `peliculle_waitlist`, insertion anonyme seule, aucune lecture
+ * publique). Un email en double renvoie 409 : traité comme un succès.
+ */
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+  id?: string;
+}
+const { lang, id } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<form
+  class="waitlist"
+  method="post"
+  data-waitlist
+  data-lang={lang}
+  data-success={t('waitlist.success')}
+  data-error={t('waitlist.error')}
+  id={id}
+>
+  <div class="waitlist-row">
+    <input
+      type="email"
+      name="email"
+      required
+      autocomplete="email"
+      placeholder={t('waitlist.placeholder')}
+      aria-label={t('waitlist.placeholder')}
+    />
+    <!-- Pot de miel anti-bots : invisible, doit rester vide -->
+    <input class="waitlist-hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+    <button type="submit" class="btn btn--primary">{t('waitlist.button')}</button>
+  </div>
+  <p class="waitlist-note" data-waitlist-note>{t('waitlist.privacy')}</p>
+</form>
+
+<style>
+  .waitlist {
+    width: 100%;
+    max-width: 30rem;
+  }
+
+  .waitlist-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.35rem;
+    border-radius: 999px;
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow:
+      inset 0 0 0 1px var(--glass-border),
+      var(--shadow-soft);
+    transition: box-shadow 0.25s var(--ease-out);
+  }
+
+  .waitlist-row:focus-within {
+    box-shadow:
+      inset 0 0 0 1.5px var(--glass-border-strong),
+      0 8px 28px var(--amber-glow);
+  }
+
+  .waitlist input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 0.6em 1em;
+    font-size: var(--text-sm);
+    outline: none;
+  }
+
+  .waitlist input::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .waitlist-hp {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .waitlist-note {
+    margin-top: 0.7rem;
+    padding-left: 1.2rem;
+    font-size: var(--text-xs);
+    color: var(--ink-faint);
+    transition: color 0.3s;
+  }
+
+  .waitlist-note.is-success {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .waitlist-note.is-error {
+    color: var(--text-soft);
+    font-weight: 600;
+  }
+
+  @media (max-width: 30rem) {
+    .waitlist-row {
+      flex-direction: column;
+      border-radius: var(--radius-lg);
+      padding: 0.5rem;
+    }
+
+    .waitlist input {
+      padding: 0.8em 1em;
+    }
+
+    .waitlist-note {
+      padding-left: 0.5rem;
+    }
+  }
+</style>
+
+<script>
+  import { SUPABASE_URL, SUPABASE_KEY } from '../config';
+
+  document.querySelectorAll<HTMLFormElement>('form[data-waitlist]').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const note = form.querySelector<HTMLElement>('[data-waitlist-note]');
+      const button = form.querySelector<HTMLButtonElement>('button[type=submit]');
+      const email = form.querySelector<HTMLInputElement>('input[name=email]');
+      const honeypot = form.querySelector<HTMLInputElement>('input[name=website]');
+      if (!note || !button || !email) return;
+
+      const showSuccess = () => {
+        note.textContent = form.dataset.success ?? '';
+        note.classList.remove('is-error');
+        note.classList.add('is-success');
+        form.reset();
+      };
+
+      // Bot détecté : on fait semblant, sans rien enregistrer.
+      if (honeypot?.value) {
+        showSuccess();
+        return;
+      }
+
+      button.disabled = true;
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/peliculle_waitlist`, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            email: email.value.trim(),
+            lang: form.dataset.lang ?? document.documentElement.lang,
+            source: 'landing',
+          }),
+        });
+        // 409 = email déjà inscrit : c'est un succès du point de vue visiteur.
+        if (!response.ok && response.status !== 409) throw new Error('waitlist request failed');
+        showSuccess();
+      } catch {
+        note.textContent = form.dataset.error ?? '';
+        note.classList.add('is-error');
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+</script>

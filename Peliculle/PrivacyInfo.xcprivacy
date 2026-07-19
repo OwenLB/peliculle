@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Peliculle ne piste pas et ne collecte aucune donnée : tout reste sur
+	     l'appareil (tri local, aucun réseau applicatif). -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<!-- UserDefaults : bookmark security-scoped, réglages, drapeaux de
+		     migration (FolderAccess, ContentView, @AppStorage). Données
+		     accessibles uniquement à l'app elle-même. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<!-- Dates de fichier : lecture de contentModificationDate / creationDate
+		     pour trier et afficher les photos.
+		     3B52.1 — fichiers/dossiers auxquels l'utilisateur a donné accès via
+		              le sélecteur de documents (dossier de la carte SD).
+		     C617.1 — fichiers du conteneur de l'app (fichiers de session dans
+		              Application Support). -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>3B52.1</string>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<!-- Espace disque : SavePreflight vérifie la place libre avant un
+		     enregistrement en lot pour ne pas échouer à mi-course. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>85F4.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

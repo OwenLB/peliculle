@@ -1,0 +1,416 @@
+---
+import PhoneStatusBar from './PhoneStatusBar.astro';
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Vraies photos (Lorem Picsum — images sous licence Unsplash, usage libre) :
+// la seule couleur de la page vient d'elles. Les « floues » sont floutées en
+// CSS : ce sont les ratées qu'on rejette. La démo boucle sur toute la pile.
+const cards = [
+  { src: '/images/swipe/field-sunset.webp', verdict: 'keep', blurry: false },
+  { src: '/images/swipe/misty-forest.webp', verdict: 'reject', blurry: true },
+  { src: '/images/swipe/sea-boat.webp', verdict: 'keep', blurry: false },
+  { src: '/images/swipe/green-forest.webp', verdict: 'keep', blurry: false },
+  { src: '/images/swipe/sea-horizon.webp', verdict: 'reject', blurry: false },
+  { src: '/images/swipe/snow-peaks.webp', verdict: 'keep', blurry: false },
+  { src: '/images/swipe/purple-flower.webp', verdict: 'keep', blurry: false },
+  { src: '/images/swipe/forest-path.webp', verdict: 'reject', blurry: true },
+  { src: '/images/swipe/waterfall.webp', verdict: 'keep', blurry: false },
+  { src: '/images/swipe/mountain-ridge.webp', verdict: 'keep', blurry: false },
+];
+---
+
+<section class="section section--dim" id="swipe">
+  <div class="container swipe-inner">
+    <div class="swipe-copy">
+      <p class="eyebrow" data-reveal>{t('swipe.eyebrow')}</p>
+      <h2 class="section-title" data-reveal>
+        {t('swipe.title')}
+        <span class="accent">{t('swipe.title.accent')}</span>
+      </h2>
+      <p class="section-lede" data-reveal>{t('swipe.text')}</p>
+
+      <!-- Rejeter à gauche (rouge), garder à droite (vert) — même sens que le geste -->
+      <div class="swipe-legend" data-reveal>
+        <span class="swipe-tag swipe-tag--reject">← {t('swipe.action.reject')}</span>
+        <span class="swipe-tag swipe-tag--keep">{t('swipe.action.keep')} →</span>
+      </div>
+    </div>
+
+    <div class="swipe-stage" data-reveal>
+      <!-- Démo animée GSAP, dans la maquette du vrai écran « Tri rapide » :
+           barre de statut, titre « N à trier », pile de cartes, trois boutons -->
+      <figure class="swipe-phone" aria-hidden="true">
+        <div class="swipe-screen">
+          <PhoneStatusBar />
+
+          <header class="swipe-topbar">
+            <span class="swipe-topbtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"></path>
+              </svg>
+            </span>
+            <span class="swipe-title">
+              <strong data-swipe-remaining>{cards.length}</strong>
+              {t('swipe.ui.tosort')}
+            </span>
+            <span class="swipe-topbtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M9 14 4 9l5-5" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke-linecap="round"></path>
+              </svg>
+            </span>
+          </header>
+
+          <div class="swipe-deck" data-swipe-deck>
+            {
+              cards.map((card, index) => (
+                <div
+                  class:list={['swipe-card', card.blurry && 'swipe-card--blurry']}
+                  data-swipe-card
+                  data-verdict={card.verdict}
+                  style={`z-index: ${cards.length - index}`}
+                >
+                  <img src={card.src} width="560" height="747" alt="" loading="lazy" decoding="async" />
+                  <span class="swipe-stamp swipe-stamp--keep">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="m5 12.5 4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    {t('swipe.action.keep')}
+                  </span>
+                  <span class="swipe-stamp swipe-stamp--reject">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round" />
+                    </svg>
+                    {t('swipe.action.reject')}
+                  </span>
+                </div>
+              ))
+            }
+          </div>
+
+          <footer class="swipe-actions">
+            <span class="swipe-action swipe-action--reject">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+                <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round"></path>
+              </svg>
+            </span>
+            <span class="swipe-action swipe-action--later">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M9 14 4 9l5-5" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M4 9h10a6 6 0 0 1 0 12h-3" stroke-linecap="round"></path>
+              </svg>
+            </span>
+            <span class="swipe-action swipe-action--keep">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6">
+                <path d="m5 12.5 4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+          </footer>
+        </div>
+      </figure>
+
+      <!-- Compteur en direct sous le téléphone, incrémenté par la démo -->
+      <div class="glass swipe-counter" aria-hidden="true">
+        <span class="swipe-count swipe-count--keep">
+          <strong data-swipe-kept>0</strong>
+          {t('swipe.ui.kept')}
+        </span>
+        <span class="swipe-count-divider"></span>
+        <span class="swipe-count swipe-count--reject">
+          <strong data-swipe-rejected>0</strong>
+          {t('swipe.ui.rejected')}
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .swipe-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(2.5rem, 2rem + 3vw, 5rem);
+  }
+
+  .swipe-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.8rem;
+  }
+
+  .swipe-tag {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    padding: 0.35em 1em;
+    border-radius: 999px;
+  }
+
+  /* Seule entorse au monochrome : la sémantique universelle du tri.
+     Vert = garder, rouge = rejeter (teintes système iOS, en verre teinté). */
+  .swipe-tag--keep {
+    background: rgba(48, 209, 88, 0.16);
+    color: #7fe3a4;
+    border: 1px solid rgba(48, 209, 88, 0.45);
+  }
+
+  .swipe-tag--reject {
+    background: rgba(255, 69, 58, 0.1);
+    color: #ff8a80;
+    border: 1px solid rgba(255, 69, 58, 0.4);
+  }
+
+  .swipe-stage {
+    display: grid;
+    justify-items: center;
+    gap: 1.6rem;
+  }
+
+  /* --- La maquette : le vrai écran « Tri rapide », recodé ------------------ */
+
+  .swipe-phone {
+    width: min(16rem, 66vw);
+    aspect-ratio: 9 / 18.95;
+    border-radius: 2.8rem;
+    background: linear-gradient(160deg, #1a1e26 0%, #0c0e13 100%);
+    padding: 0.45rem;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      var(--shadow-lift);
+  }
+
+  .swipe-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-radius: 2.35rem;
+    overflow: hidden;
+    background: #000;
+    container-type: inline-size;
+    transition: background 0.35s;
+  }
+
+  :global(html[data-theme='light']) .swipe-screen {
+    background: #fff;
+  }
+
+  /* Barre de titre : ✗ · « N à trier » · annuler — comme dans l'app */
+  .swipe-topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2cqw 4.5cqw 1cqw;
+  }
+
+  .swipe-topbtn {
+    display: grid;
+    place-items: center;
+    width: 10.5cqw;
+    height: 10.5cqw;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  .swipe-topbtn svg {
+    width: 4.6cqw;
+    height: 4.6cqw;
+  }
+
+  .swipe-title {
+    font-size: 4.6cqw;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    color: #fff;
+  }
+
+  .swipe-title strong {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :global(html[data-theme='light']) .swipe-topbtn {
+    background: rgba(0, 0, 0, 0.05);
+    color: #1c1c1e;
+  }
+
+  :global(html[data-theme='light']) .swipe-title {
+    color: #1c1c1e;
+  }
+
+  /* --- La pile de cartes --------------------------------------------------- */
+
+  .swipe-deck {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+
+  .swipe-card {
+    grid-area: 1 / 1;
+    position: relative;
+    width: 86cqw;
+    aspect-ratio: 3 / 4;
+    border-radius: 4.5cqw;
+    overflow: hidden;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+  }
+
+  :global(html[data-theme='light']) .swipe-card {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+    /* Le liseré du verdict : transparent au repos, coloré pendant le geste */
+    outline: 3px solid transparent;
+    outline-offset: -3px;
+    transition: outline-color 0.25s;
+  }
+
+  .swipe-card.is-keep {
+    outline-color: #30d158;
+  }
+
+  .swipe-card.is-reject {
+    outline-color: #ff453a;
+  }
+
+  .swipe-card img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* La « ratée » qu'on rejette : légèrement floue */
+  .swipe-card--blurry img {
+    filter: blur(1.5px);
+  }
+
+  /* Pastilles de verdict, comme dans l'app : « Garder » à droite (sens du
+     geste), « Rejeter » à gauche */
+  .swipe-stamp {
+    position: absolute;
+    top: 3.5cqw;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    font-size: 3.6cqw;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.42em 0.9em;
+    border-radius: 999px;
+    color: #fff;
+    opacity: 0;
+  }
+
+  .swipe-stamp svg {
+    width: 1em;
+    height: 1em;
+  }
+
+  .swipe-stamp--keep {
+    right: 3.5cqw;
+    background: #30d158;
+  }
+
+  .swipe-stamp--reject {
+    left: 3.5cqw;
+    background: #ff453a;
+  }
+
+  /* --- Les trois boutons : rejeter, plus tard, garder ---------------------- */
+
+  .swipe-actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7cqw;
+    padding: 3cqw 0 5cqw;
+  }
+
+  .swipe-action {
+    display: grid;
+    place-items: center;
+    width: 15.5cqw;
+    height: 15.5cqw;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .swipe-action svg {
+    width: 6.2cqw;
+    height: 6.2cqw;
+  }
+
+  :global(html[data-theme='light']) .swipe-action {
+    background: #fff;
+    box-shadow:
+      0 1px 4px rgba(0, 0, 0, 0.12),
+      0 4px 14px rgba(0, 0, 0, 0.08);
+  }
+
+  .swipe-action--reject {
+    color: #ff453a;
+  }
+
+  .swipe-action--later {
+    color: #ffd60a;
+  }
+
+  .swipe-action--keep {
+    color: #30d158;
+  }
+
+  /* --- Compteur ------------------------------------------------------------ */
+
+  .swipe-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55em 1.3em;
+    border-radius: 999px;
+    font-size: var(--text-sm);
+  }
+
+  .swipe-count {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    color: var(--text-faint);
+  }
+
+  .swipe-count strong {
+    font-size: var(--text-base);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .swipe-count--keep strong {
+    color: #7fe3a4;
+  }
+
+  .swipe-count--reject strong {
+    color: #ff8a80;
+  }
+
+  .swipe-count-divider {
+    width: 1px;
+    height: 1.1em;
+    background: var(--glass-border);
+  }
+
+  @media (max-width: 46rem) {
+    .swipe-inner {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

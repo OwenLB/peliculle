@@ -1,0 +1,159 @@
+---
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const freeItems = [1, 2, 3, 4, 5].map((i) => t(`pricing.free.${i}`));
+const premiumItems = [1, 2, 3, 4, 5].map((i) => t(`pricing.premium.${i}`));
+---
+
+<section class="section section--dim pricing" id="premium">
+  <div class="container">
+    <p class="eyebrow" data-reveal>{t('nav.premium')}</p>
+    <h2 class="section-title" data-reveal>{t('pricing.title')}</h2>
+    <p class="section-lede" data-reveal>{t('pricing.subtitle')}</p>
+
+    <div class="pricing-grid" data-reveal-group>
+      <article class="pricing-card">
+        <header>
+          <h3>{t('pricing.free.title')}</h3>
+          <p class="pricing-price">{t('pricing.free.price')}</p>
+          <p class="pricing-tagline">{t('pricing.free.tagline')}</p>
+        </header>
+        <ul>
+          {freeItems.map((item) => <li>{item}</li>)}
+        </ul>
+      </article>
+
+      <article class="pricing-card pricing-card--premium">
+        <span class="pricing-badge">{t('pricing.premium.badge')}</span>
+        <header>
+          <h3>{t('pricing.premium.title')}</h3>
+          <p class="pricing-price">
+            {t('pricing.premium.price')}
+            <span class="pricing-pricenote">{t('pricing.premium.pricenote')}</span>
+          </p>
+          <p class="pricing-tagline">{t('pricing.premium.tagline')}</p>
+        </header>
+        <ul>
+          {premiumItems.map((item) => <li>{item}</li>)}
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Section centrée : le prix est un moment de décision, il mérite l'axe */
+  .pricing .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .pricing .section-lede {
+    margin-inline: auto;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1.4rem;
+    margin-top: 3rem;
+    width: 100%;
+    max-width: 52rem;
+    margin-inline: auto;
+    text-align: left;
+  }
+
+  .pricing-card {
+    position: relative;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 2.1rem;
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Premium : verre plus « présent » + liseré lumineux, sans teinte */
+  .pricing-card--premium {
+    background: var(--glass-strong);
+    border-color: var(--glass-border-strong);
+    box-shadow:
+      0 1px 0 var(--glass-sheen) inset,
+      0 0 0 1px var(--glass-border-strong),
+      var(--shadow-lift);
+  }
+
+  /* Badge inversé : pastille pleine, à contre-courant du fond */
+  .pricing-badge {
+    position: absolute;
+    top: -0.8rem;
+    right: 1.4rem;
+    background: var(--text);
+    color: var(--bg);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.35em 1em;
+    border-radius: 999px;
+    box-shadow: 0 10px 26px rgba(15, 20, 30, 0.3);
+  }
+
+  .pricing-card h3 {
+    font-size: var(--text-lg);
+    letter-spacing: -0.015em;
+  }
+
+  .pricing-price {
+    font-size: var(--text-2xl);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-block: 0.3rem;
+  }
+
+  .pricing-pricenote {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--ink-faint);
+    letter-spacing: 0;
+    margin-left: 0.3em;
+  }
+
+  .pricing-tagline {
+    font-size: var(--text-sm);
+    color: var(--ink-soft);
+    margin-bottom: 1.4rem;
+  }
+
+  .pricing-card ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+    font-size: var(--text-sm);
+    color: var(--ink-soft);
+  }
+
+  .pricing-card li {
+    display: flex;
+    gap: 0.6em;
+    align-items: baseline;
+  }
+
+  .pricing-card li::before {
+    content: '✓';
+    font-weight: 700;
+    color: var(--text-faint);
+    flex: none;
+  }
+
+  .pricing-card--premium li::before {
+    color: var(--text);
+  }
+</style>

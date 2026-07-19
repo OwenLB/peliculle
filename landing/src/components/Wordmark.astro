@@ -1,0 +1,18 @@
+---
+/**
+ * Wordmark Pelicull(e) — usage visuel uniquement.
+ * Le « cull » ressort en ambre ; les parenthèses marquent ce qui est
+ * « cullable ». La graphie simple « Peliculle » doit toujours apparaître
+ * en clair à proximité (SEO / apprentissage de la marque).
+ */
+interface Props {
+  class?: string;
+  onInk?: boolean;
+}
+const { class: className = '', onInk = false } = Astro.props;
+---
+
+<span class:list={['wordmark', { 'wordmark--on-ink': onInk }, className]} translate="no"
+  >Peli<span class="wordmark-cull">cull</span><span class="wordmark-paren">(</span><span
+    class="wordmark-e">e</span><span class="wordmark-paren">)</span></span
+>

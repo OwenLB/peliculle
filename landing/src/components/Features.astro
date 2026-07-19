@@ -1,0 +1,494 @@
+---
+import AppShot from './AppShot.astro';
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Bento : chaque fonctionnalité a sa place selon son poids — les grandes
+// cellules portent une mini-démo visuelle, les petites restent typographiques.
+const features = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
+  title: t(`features.${i}.title`),
+  text: t(`features.${i}.text`),
+}));
+
+const formats = ['CR3', 'CR2', 'NEF', 'ARW', 'RAF', 'DNG', 'ORF', 'RW2'];
+---
+
+<section class="section" id="features">
+  <div class="container">
+    <p class="eyebrow" data-reveal>{t('nav.features')}</p>
+    <h2 class="section-title" data-reveal>{t('features.title')}</h2>
+    <p class="section-lede" data-reveal>{t('features.subtitle')}</p>
+
+    <div class="bento" data-reveal-group>
+      <!-- 1 · Zéro import — la promesse centrale, grande cellule -->
+      <article class="feature-card bento-cell bento-cell--wide">
+        <div class="bento-visual bento-visual--import" aria-hidden="true">
+          <span class="bento-sd">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="6" y="3" width="12" height="18" rx="2"></rect>
+              <path d="M18 7V5.5L15.5 3M9 7h4M9 10h6"></path>
+            </svg>
+          </span>
+          <span class="bento-flow"></span>
+          <span class="bento-import-thumbs">
+            <img src="/images/swipe/field-sunset.webp" width="90" height="120" alt="" loading="lazy" decoding="async" />
+            <img src="/images/swipe/sea-boat.webp" width="90" height="120" alt="" loading="lazy" decoding="async" />
+            <img src="/images/swipe/snow-peaks.webp" width="90" height="120" alt="" loading="lazy" decoding="async" />
+          </span>
+        </div>
+        <span class="chip chip--free">{t('features.free')}</span>
+        <h3>{features[0].title}</h3>
+        <p>{features[0].text}</p>
+      </article>
+
+      <!-- 2 · RAW — mur de formats -->
+      <article class="feature-card bento-cell bento-cell--wide">
+        <div class="bento-visual bento-visual--formats" aria-hidden="true">
+          {formats.map((format) => <span class="bento-format">{format}</span>)}
+        </div>
+        <span class="chip chip--free">{t('features.free')}</span>
+        <h3>{features[1].title}</h3>
+        <p>{features[1].text}</p>
+      </article>
+
+      <!-- 3 · Piqué / loupe -->
+      <article class="feature-card bento-cell">
+        <div class="bento-visual bento-visual--zoom" aria-hidden="true">
+          <img src="/images/swipe/waterfall.webp" width="180" height="120" alt="" loading="lazy" decoding="async" />
+          <span class="bento-loupe"></span>
+        </div>
+        <span class="chip chip--free">{t('features.free')}</span>
+        <h3>{features[2].title}</h3>
+        <p>{features[2].text}</p>
+      </article>
+
+      <!-- 4 · Étoiles & filtres — la section « Filtres » de l'app, en gros plan -->
+      <article class="feature-card bento-cell">
+        <div class="bento-visual bento-visual--fragment" aria-hidden="true">
+          <AppShot name="filtres-section" width={800} height={557} />
+        </div>
+        <span class="chip chip--free">{t('features.free')}</span>
+        <h3>{features[3].title}</h3>
+        <p>{features[3].text}</p>
+      </article>
+
+      <!-- 7 · Tri au geste — le swipe « Garder » du tri rapide -->
+      <article class="feature-card bento-cell">
+        <div class="bento-visual bento-visual--shot" aria-hidden="true">
+          <span class="bento-shot-frame">
+            <span class="bento-shot-screen">
+              <AppShot name="swipe-garder" width={800} height={1614} bar />
+            </span>
+          </span>
+        </div>
+        <span class="chip chip--premium">{t('features.premium')}</span>
+        <h3>{features[6].title}</h3>
+        <p>{features[6].text}</p>
+      </article>
+
+      <!-- 5 · Rafales -->
+      <article class="feature-card bento-cell bento-cell--wide">
+        <div class="bento-visual bento-visual--burst" aria-hidden="true">
+          <span class="bento-burst-stack">
+            <img src="/images/swipe/sea-horizon.webp" width="120" height="90" alt="" loading="lazy" decoding="async" />
+            <img src="/images/swipe/sea-horizon.webp" width="120" height="90" alt="" loading="lazy" decoding="async" />
+            <img class="is-winner" src="/images/swipe/sea-boat.webp" width="120" height="90" alt="" loading="lazy" decoding="async" />
+          </span>
+          <span class="bento-burst-count">{t('features.ui.burst')}</span>
+        </div>
+        <span class="chip chip--premium">{t('features.premium')}</span>
+        <h3>{features[4].title}</h3>
+        <p>{features[4].text}</p>
+      </article>
+
+      <!-- 6 · Duel — l'écran de comparaison entier, à droite du texte : les
+           deux photos et leurs boutons « Choisir », sinon on ne comprend pas -->
+      <article class="feature-card bento-cell bento-cell--wide">
+        <div class="bento-duel">
+          <div class="bento-duel-copy">
+            <span class="chip chip--premium">{t('features.premium')}</span>
+            <h3>{features[5].title}</h3>
+            <p>{features[5].text}</p>
+          </div>
+          <div class="bento-visual bento-visual--shot-full" aria-hidden="true">
+            <span class="bento-shot-frame bento-shot-frame--full">
+              <span class="bento-shot-screen">
+                <AppShot name="comparaison" width={800} height={1734} />
+              </span>
+            </span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 8 · Mode Voyage — cellule horizontale pleine largeur -->
+      <article class="feature-card bento-cell bento-cell--full">
+        <div class="bento-trip">
+          <div class="bento-trip-copy">
+            <span class="chip chip--premium">{t('features.premium')}</span>
+            <h3>{features[7].title}</h3>
+            <p>{features[7].text}</p>
+          </div>
+          <div class="bento-visual bento-visual--trip" aria-hidden="true">
+            <span class="bento-trip-dates">12 → 21 · 05</span>
+            <span class="bento-flow"></span>
+            <span class="bento-trip-album">
+              <img src="/images/swipe/green-forest.webp" width="90" height="120" alt="" loading="lazy" decoding="async" />
+              <img src="/images/swipe/mountain-ridge.webp" width="90" height="120" alt="" loading="lazy" decoding="async" />
+              <img src="/images/swipe/field-sunset.webp" width="90" height="120" alt="" loading="lazy" decoding="async" />
+            </span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1.1rem;
+    margin-top: 3rem;
+  }
+
+  .bento-cell {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    transition:
+      transform 0.3s var(--ease-out),
+      box-shadow 0.3s var(--ease-out),
+      border-color 0.3s;
+  }
+
+  .bento-cell:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lift);
+    border-color: var(--glass-border-strong);
+  }
+
+  .bento-cell--wide {
+    grid-column: span 3;
+  }
+
+  .bento-cell--full {
+    grid-column: 1 / -1;
+  }
+
+  .bento-cell h3 {
+    font-size: var(--text-base);
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    margin-top: 0.5rem;
+  }
+
+  .bento-cell p {
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 34em;
+  }
+
+  /* --- Les mini-démos ------------------------------------------------------ */
+
+  .bento-visual {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    min-height: 7.5rem;
+    margin-bottom: 0.9rem;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--glass-border);
+    overflow: hidden;
+  }
+
+  .bento-visual img {
+    height: auto; /* neutralise l'attribut height : c'est aspect-ratio qui dimensionne */
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  /* Pointillé de flux : « la carte → l'écran », « les dates → l'album » */
+  .bento-flow {
+    width: 3rem;
+    height: 1px;
+    background-image: linear-gradient(90deg, var(--text-faint) 45%, transparent 45%);
+    background-size: 8px 1px;
+  }
+
+  .bento-sd {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 12px;
+    background: var(--glass-strong);
+    border: 1px solid var(--glass-border-strong);
+    color: var(--text-soft);
+  }
+
+  .bento-sd svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .bento-import-thumbs {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .bento-import-thumbs img {
+    width: 2.4rem;
+    aspect-ratio: 3 / 4;
+  }
+
+  .bento-visual--formats {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1.2rem;
+    align-content: center;
+  }
+
+  .bento-format {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 0.35em 0.8em;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    color: var(--text-faint);
+  }
+
+  .bento-visual--zoom {
+    position: relative;
+    padding: 0;
+  }
+
+  .bento-visual--zoom img {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+  }
+
+  .bento-loupe {
+    position: relative;
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 999px;
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    background-image: url('/images/swipe/waterfall.webp');
+    background-size: 700%;
+    background-position: 52% 30%;
+  }
+
+  /* Cellules « capture » : un mini-cadre iPhone qui dépasse du bas de la
+     cellule — on voit le haut du vrai écran, le reste est rogné. */
+  .bento-visual--shot {
+    position: relative;
+    min-height: 12rem;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .bento-shot-frame {
+    position: absolute;
+    top: 0.9rem;
+    left: 50%;
+    translate: -50% 0;
+    width: min(10rem, 68%);
+    aspect-ratio: 9 / 18.95;
+    border-radius: 1.7rem;
+    background: linear-gradient(160deg, #1a1e26 0%, #0c0e13 100%);
+    padding: 0.3rem;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+      0 14px 34px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Variante « téléphone entier », à droite du texte : l'écran complet */
+  .bento-duel {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.6rem;
+  }
+
+  .bento-duel-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .bento-visual--shot-full {
+    min-height: 0;
+    margin-bottom: 0;
+    padding: 1.1rem;
+  }
+
+  .bento-shot-frame--full {
+    position: static;
+    translate: none;
+    width: auto;
+    height: 15rem;
+    aspect-ratio: 9 / 18.7;
+  }
+
+  .bento-shot-screen {
+    display: block;
+    height: 100%;
+    border-radius: 1.4rem;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* Fragment d'interface à plat, sans cadre : la cellule fait la fenêtre */
+  .bento-visual--fragment {
+    aspect-ratio: 800 / 557;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .bento-visual--fragment :global(.app-shot) {
+    width: 100%;
+  }
+
+  .bento-burst-stack {
+    position: relative;
+    display: grid;
+  }
+
+  .bento-burst-stack img {
+    grid-area: 1 / 1;
+    width: 6rem;
+    aspect-ratio: 4 / 3;
+  }
+
+  .bento-burst-stack img:nth-child(1) {
+    rotate: -6deg;
+    translate: -0.9rem 0.2rem;
+    opacity: 0.45;
+  }
+
+  .bento-burst-stack img:nth-child(2) {
+    rotate: 4deg;
+    translate: 0.8rem 0.1rem;
+    opacity: 0.6;
+  }
+
+  .bento-burst-stack img.is-winner {
+    position: relative;
+    z-index: 1;
+    outline: 1.5px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+  }
+
+  .bento-burst-count {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 0.35em 0.8em;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border-strong);
+    color: var(--text-soft);
+    background: var(--glass-strong);
+  }
+
+  /* Mode Voyage : cellule horizontale, visuel à droite */
+
+  .bento-trip {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .bento-trip-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
+
+  .bento-visual--trip {
+    margin-bottom: 0;
+    min-height: 8.5rem;
+  }
+
+  .bento-trip-dates {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 0.45em 0.9em;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border-strong);
+    color: var(--text-soft);
+    white-space: nowrap;
+  }
+
+  .bento-trip-album {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .bento-trip-album img {
+    width: 2.7rem;
+    aspect-ratio: 3 / 4;
+  }
+
+  /* --- Responsive ---------------------------------------------------------- */
+
+  @media (max-width: 62rem) {
+    .bento {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .bento-cell,
+    .bento-cell--wide {
+      grid-column: span 1;
+    }
+
+    .bento-cell--full {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 46rem) {
+    .bento {
+      grid-template-columns: 1fr;
+    }
+
+    .bento-cell,
+    .bento-cell--wide {
+      grid-column: 1 / -1;
+    }
+
+    .bento-trip,
+    .bento-duel {
+      grid-template-columns: 1fr;
+      gap: 1.2rem;
+    }
+  }
+</style>

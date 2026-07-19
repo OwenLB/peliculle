@@ -1,0 +1,52 @@
+{
+  "sourceLanguage" : "fr",
+  "strings" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Peliculle"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryAddUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peliculle only saves the photos you choose to keep to your camera roll."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peliculle enregistre uniquement les photos que vous choisissez de garder dans votre pellicule."
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peliculle can sort photos from your photo library (a source you choose) and organizes kept photos into the album of your choice."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peliculle peut trier les photos de votre photothèque (source choisie par vous) et range les photos gardées dans l'album de votre choix."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

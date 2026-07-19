@@ -1,0 +1,148 @@
+---
+import Wordmark from './Wordmark.astro';
+import Logo from './Logo.astro';
+import { useTranslations, localizePath, type Lang } from '../i18n/utils';
+import { languages } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-brand">
+      <div class="footer-lockup">
+        <Logo class="footer-logo" size={48} alt="" />
+        <!-- Le « e » sort et rentre des parenthèses (animation GSAP) : garder / rejeter -->
+        <p class="footer-wordmark" data-footer-wordmark aria-label="Peliculle">
+          <Wordmark class="footer-mark" />
+        </p>
+      </div>
+      <p class="footer-pun">{t('footer.pun')}</p>
+    </div>
+
+    <div class="footer-meta">
+      <p>{t('footer.tagline')}</p>
+      <p>
+        {t('footer.contact')} :
+        <a href="mailto:contact@peliculle.com" class="footer-link">contact@peliculle.com</a>
+      </p>
+      <p class="footer-langs">
+        {t('footer.language')} :
+        {
+          (Object.entries(languages) as [Lang, string][]).map(([code, name]) => (
+            <a
+              href={localizePath(code)}
+              class:list={['footer-link', { 'is-current': code === lang }]}
+              lang={code}
+              hreflang={code}
+            >
+              {name}
+            </a>
+          ))
+        }
+      </p>
+      <p class="footer-copyright">© {year} Peliculle. {t('footer.rights')}</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--ink-bg);
+    color: var(--ink-paper-soft);
+    padding-block: 4rem 3rem;
+    font-size: var(--text-sm);
+  }
+
+  .footer .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .footer-lockup {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .footer-logo {
+    width: clamp(2.6rem, 2.2rem + 1.4vw, 3.4rem);
+    height: auto;
+    flex: none;
+  }
+
+  .footer-wordmark {
+    font-size: clamp(2.4rem, 2rem + 3vw, 4rem);
+    color: var(--ink-paper);
+    line-height: 1;
+  }
+
+  .footer-wordmark :global(.wordmark-cull) {
+    color: var(--amber);
+  }
+
+  .footer-wordmark :global(.wordmark-e),
+  .footer-wordmark :global(.wordmark-paren) {
+    display: inline-block;
+  }
+
+  .footer-pun {
+    margin-top: 0.9rem;
+    font-size: var(--text-xs);
+    color: var(--ink-paper-soft);
+    font-style: italic;
+  }
+
+  .footer-meta {
+    display: grid;
+    gap: 0.45rem;
+    text-align: right;
+  }
+
+  .footer-link {
+    color: var(--ink-paper);
+    text-decoration: underline;
+    text-decoration-color: rgba(244, 239, 231, 0.3);
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.2s;
+  }
+
+  .footer-link:hover {
+    text-decoration-color: var(--amber);
+  }
+
+  .footer-langs .footer-link {
+    margin-left: 0.6em;
+  }
+
+  .footer-langs .is-current {
+    color: var(--amber);
+    text-decoration: none;
+    pointer-events: none;
+  }
+
+  .footer-copyright {
+    font-size: var(--text-xs);
+    opacity: 0.6;
+    margin-top: 0.6rem;
+  }
+
+  @media (max-width: 46rem) {
+    .footer .container {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .footer-meta {
+      text-align: left;
+    }
+  }
+</style>

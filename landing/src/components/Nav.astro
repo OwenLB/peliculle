@@ -1,0 +1,208 @@
+---
+import Wordmark from './Wordmark.astro';
+import Logo from './Logo.astro';
+import { useTranslations, localizePath, type Lang } from '../i18n/utils';
+import { languages } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const otherLangs = (Object.keys(languages) as Lang[]).filter((l) => l !== lang);
+---
+
+<header class="nav" data-nav>
+  <div class="container nav-inner">
+    <a href={localizePath(lang)} class="nav-brand" aria-label="Peliculle">
+      <Logo class="nav-logo" size={30} alt="" />
+      <Wordmark />
+    </a>
+    <nav class="nav-links" aria-label="Navigation">
+      <a href="#features">{t('nav.features')}</a>
+      <a href="#premium">{t('nav.premium')}</a>
+      <a href="#faq">{t('nav.faq')}</a>
+    </nav>
+    <div class="nav-actions">
+      {
+        otherLangs.map((l) => (
+          <a class="nav-lang" href={localizePath(l)} lang={l} hreflang={l}>
+            {l.toUpperCase()}
+          </a>
+        ))
+      }
+      <button class="nav-theme" type="button" data-theme-toggle aria-label={t('nav.theme')} title={t('nav.theme')}>
+        <svg class="nav-theme-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2"></circle>
+          <path
+            d="M12 2.8v2.2M12 19v2.2M21.2 12H19M5 12H2.8M18.5 5.5 17 7M7 17l-1.5 1.5M18.5 18.5 17 17M7 7 5.5 5.5"
+            stroke-linecap="round"></path>
+        </svg>
+        <svg class="nav-theme-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M20.4 14.2A8.4 8.4 0 0 1 9.8 3.6a8.4 8.4 0 1 0 10.6 10.6z" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <a href="#waitlist" class="btn btn--primary nav-cta">{t('nav.cta')}</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 50;
+    padding-block: 0.9rem;
+    transition:
+      background 0.3s,
+      box-shadow 0.3s,
+      padding 0.3s;
+  }
+
+  .nav.is-scrolled {
+    background: color-mix(in srgb, var(--paper) 82%, transparent);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    backdrop-filter: saturate(1.6) blur(14px);
+    box-shadow: 0 1px 0 var(--line);
+    padding-block: 0.55rem;
+  }
+
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.25rem;
+  }
+
+  .nav-logo {
+    width: 1.65rem;
+    height: auto;
+    flex: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.6rem;
+    margin-inline: auto;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+
+  .nav-links a {
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--ink);
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .nav-lang {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+    transition: color 0.2s;
+  }
+
+  .nav-lang:hover {
+    color: var(--amber-deep);
+  }
+
+  .nav-cta {
+    padding: 0.6em 1.3em;
+  }
+
+  .nav-theme {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition:
+      color 0.2s,
+      border-color 0.2s,
+      background 0.2s;
+  }
+
+  .nav-theme:hover {
+    color: var(--ink);
+    border-color: var(--glass-border-strong);
+    background: var(--glass-hover);
+  }
+
+  .nav-theme svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    grid-area: 1 / 1;
+    transition:
+      opacity 0.25s,
+      transform 0.35s var(--ease-out);
+  }
+
+  /* L'icône montre le thème vers lequel on bascule */
+  .nav-theme-sun,
+  :global(html[data-theme='light']) .nav-theme-moon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+
+  .nav-theme-moon,
+  :global(html[data-theme='light']) .nav-theme-sun {
+    opacity: 0;
+    transform: rotate(60deg) scale(0.6);
+  }
+
+  @media (max-width: 46rem) {
+    .nav-links {
+      display: none;
+    }
+
+    .nav-inner {
+      justify-content: space-between;
+    }
+  }
+</style>
+
+<script>
+  const nav = document.querySelector('[data-nav]');
+  if (nav) {
+    const onScroll = () => nav.classList.toggle('is-scrolled', window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  // Bascule de thème : mémorisée, par-dessus l'init système de Base.astro
+  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch {
+        /* navigation privée : le choix vaut pour la page en cours */
+      }
+      document
+        .querySelectorAll('meta[name="theme-color"]')
+        .forEach((meta) => meta.setAttribute('content', next === 'light' ? '#eef0f4' : '#080a0e'));
+    });
+  });
+</script>

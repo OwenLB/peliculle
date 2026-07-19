@@ -1,0 +1,92 @@
+---
+// Barre de statut iOS reconstruite : heure « 9:41 », Dynamic Island, signal,
+// Wi-Fi et batterie. Posée au-dessus des captures (dont la vraie barre est
+// rognée : heure et batterie incohérentes d'un screen à l'autre) et en tête
+// de la maquette du tri rapide. Se dimensionne en cqw : le parent doit être
+// un container inline-size (c'est le cas de .app-shot et .swipe-screen).
+---
+
+<span class="phone-bar" aria-hidden="true">
+  <span class="phone-bar-time">9:41</span>
+  <span class="phone-bar-island"></span>
+  <span class="phone-bar-status">
+    <!-- Signal -->
+    <svg viewBox="0 0 18 12" fill="currentColor">
+      <rect x="0" y="7" width="3" height="4" rx="1"></rect>
+      <rect x="5" y="5" width="3" height="6" rx="1"></rect>
+      <rect x="10" y="2.5" width="3" height="8.5" rx="1"></rect>
+      <rect x="15" y="0" width="3" height="11" rx="1"></rect>
+    </svg>
+    <!-- Wi-Fi -->
+    <svg viewBox="0 0 16 12" fill="currentColor">
+      <path
+        d="M8 10.8 5.6 8.4a3.4 3.4 0 0 1 4.8 0Zm3.8-3.8a5.9 5.9 0 0 0-7.6 0L2.8 5.6a8.4 8.4 0 0 1 10.4 0ZM8 0c2.9 0 5.6 1 7.7 2.8l-1.4 1.4A9.9 9.9 0 0 0 8 2.5c-2.4 0-4.6 .9-6.3 2.3L.3 2.8A11.9 11.9 0 0 1 8 0Z"
+      ></path>
+    </svg>
+    <!-- Batterie -->
+    <svg viewBox="0 0 25 12" fill="none">
+      <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" opacity="0.4"></rect>
+      <rect x="2" y="2" width="15" height="8" rx="2" fill="currentColor"></rect>
+      <path d="M23 4v4a2.2 2.2 0 0 0 0-4" fill="currentColor" opacity="0.4"></path>
+    </svg>
+  </span>
+</span>
+
+<style is:global>
+  /* Proportions du vrai statut iPhone : barre de 15 % de la largeur d'écran */
+  .phone-bar {
+    position: relative;
+    z-index: 2;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 15cqw;
+    padding-inline: 9.5cqw 7.5cqw;
+    background: #000;
+    color: #fff;
+  }
+
+  html[data-theme='light'] .phone-bar {
+    background: #fff;
+    color: #000;
+  }
+
+  .phone-bar-time {
+    font-size: 4.4cqw;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phone-bar-island {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    translate: -50% -50%;
+    width: 31cqw;
+    height: 9.4cqw;
+    border-radius: 999px;
+    background: #000;
+  }
+
+  html[data-theme='light'] .phone-bar-island {
+    /* L'île reste noire, mais détachée du fond clair */
+    box-shadow: 0 0 0 0.4cqw rgba(0, 0, 0, 0.06);
+  }
+
+  .phone-bar-status {
+    display: flex;
+    align-items: center;
+    gap: 1.6cqw;
+  }
+
+  .phone-bar-status svg {
+    height: 3.2cqw;
+    width: auto;
+  }
+
+  .phone-bar-status svg:last-child {
+    height: 3.4cqw;
+  }
+</style>

@@ -1,0 +1,538 @@
+/* ==========================================================================
+   Peliculle — design system
+   Liquid glass, minimaliste, monochrome. Fond sombre dimensionnel, panneaux
+   de verre dépoli translucides, lumière ambiante froide. Aucune couleur
+   d'accent — la seule couleur vient des photos.
+   ========================================================================== */
+
+:root {
+  /* Fond sombre, froid, dimensionnel */
+  --bg: #080a0e;
+  --bg-raised: #0c0f15; /* sections alternées, à peine plus claire */
+
+  /* Verre (liquid glass) */
+  --glass: rgba(255, 255, 255, 0.045);
+  --glass-strong: rgba(255, 255, 255, 0.075);
+  --glass-hover: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-strong: rgba(255, 255, 255, 0.18);
+  --glass-sheen: rgba(255, 255, 255, 0.16); /* liseré spéculaire haut */
+  --glass-blur: blur(22px) saturate(1.35);
+
+  /* Texte — hiérarchie par opacité. Les niveaux faibles restent au-dessus
+     du seuil de contraste AA pour les petits textes (eyebrows, microcopy). */
+  --text: #eef1f5;
+  --text-soft: rgba(238, 241, 245, 0.66);
+  --text-faint: rgba(238, 241, 245, 0.55);
+  --text-dim: rgba(238, 241, 245, 0.32);
+
+  /* Halo ambiant neutre, extrêmement discret — noir et blanc strict,
+     aucune teinte, même dans les lueurs */
+  --ambient: rgba(255, 255, 255, 0.09);
+  --ambient-soft: rgba(255, 255, 255, 0.04);
+
+  /* États de tri — monochromes (différenciés par la clarté, pas la teinte) */
+  --keep: rgba(255, 255, 255, 0.95);
+  --reject: rgba(238, 241, 245, 0.34);
+
+  /* Typo — stack système : le pitch de l'app est « ressenti natif Apple » */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Inter, Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Échelle fluide */
+  --text-xs: clamp(0.72rem, 0.7rem + 0.1vw, 0.78rem);
+  --text-sm: clamp(0.85rem, 0.82rem + 0.15vw, 0.95rem);
+  --text-base: clamp(1rem, 0.96rem + 0.2vw, 1.125rem);
+  --text-lg: clamp(1.15rem, 1.08rem + 0.35vw, 1.35rem);
+  --text-xl: clamp(1.45rem, 1.3rem + 0.75vw, 1.9rem);
+  --text-2xl: clamp(1.9rem, 1.6rem + 1.5vw, 2.8rem);
+  --text-hero: clamp(2.6rem, 1.8rem + 4.2vw, 5.2rem);
+
+  --radius: 16px;
+  --radius-lg: 26px;
+  --container: 72rem;
+  --container-narrow: 44rem;
+
+  --shadow-glass: 0 1px 0 var(--glass-sheen) inset, 0 24px 60px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 1px 0 var(--glass-sheen) inset, 0 34px 90px rgba(0, 0, 0, 0.62);
+  --shadow-soft: 0 1px 0 var(--glass-sheen) inset, 0 16px 40px rgba(0, 0, 0, 0.4);
+
+  /* Sémantique du tri hors photo (légendes, compteurs) — versions sombres */
+  --keep-ink: #7fe3a4;
+  --reject-ink: #ff8a80;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* --- Alias de compatibilité : anciens noms → système liquid glass --------
+     Le design a basculé du chaud/ambre vers le monochrome sur verre. Ces alias
+     évitent d'éparpiller la palette dans chaque composant. */
+  --paper: var(--bg);
+  --paper-raised: var(--glass);
+  --paper-dim: var(--bg-raised);
+  --ink: var(--text);
+  --ink-soft: var(--text-soft);
+  --ink-faint: var(--text-faint);
+  --line: var(--glass-border);
+  --line-strong: var(--glass-border-strong);
+  --amber: var(--text);
+  --amber-deep: var(--text);
+  --amber-soft: var(--glass-strong);
+  --amber-glow: rgba(255, 255, 255, 0.14);
+  --ink-bg: var(--bg);
+  --ink-bg-raised: var(--glass);
+  --ink-paper: var(--text);
+  --ink-paper-soft: var(--text-soft);
+  --ink-line: var(--glass-border);
+}
+
+/* --------------------------------------------------------------------------
+   Thème clair : les mêmes tokens, inversés. Appliqué sur <html> par le
+   script inline de Base.astro (localStorage sinon prefers-color-scheme),
+   basculable via le toggle de la nav. Les alias ci-dessus référencent les
+   tokens par var() sur le même élément : ils suivent automatiquement. */
+html[data-theme='light'] {
+  --bg: #eef0f4;
+  --bg-raised: #e6e9ee;
+
+  --glass: rgba(10, 12, 16, 0.045);
+  --glass-strong: rgba(10, 12, 16, 0.07);
+  --glass-hover: rgba(10, 12, 16, 0.1);
+  --glass-border: rgba(10, 12, 16, 0.14);
+  --glass-border-strong: rgba(10, 12, 16, 0.28);
+  --glass-sheen: rgba(255, 255, 255, 0.9);
+
+  --text: #0b0d12;
+  --text-soft: rgba(11, 13, 18, 0.72);
+  --text-faint: rgba(11, 13, 18, 0.56);
+  --text-dim: rgba(11, 13, 18, 0.36);
+
+  --ambient: rgba(10, 12, 16, 0.05);
+  --ambient-soft: rgba(10, 12, 16, 0.025);
+
+  --keep: rgba(11, 13, 18, 0.95);
+  --reject: rgba(11, 13, 18, 0.34);
+
+  --shadow-glass: 0 1px 0 var(--glass-sheen) inset, 0 24px 60px rgba(15, 20, 30, 0.14);
+  --shadow-lift: 0 1px 0 var(--glass-sheen) inset, 0 34px 90px rgba(15, 20, 30, 0.2);
+  --shadow-soft: 0 1px 0 var(--glass-sheen) inset, 0 16px 40px rgba(15, 20, 30, 0.1);
+
+  --keep-ink: #12793c;
+  --reject-ink: #bb2b20;
+
+  --amber-glow: rgba(15, 20, 30, 0.12);
+}
+
+html[data-theme='light'] ::selection {
+  background: rgba(11, 13, 18, 0.85);
+  color: #fff;
+}
+
+html[data-theme='light'] :focus-visible {
+  outline-color: rgba(11, 13, 18, 0.75);
+}
+
+/* Le grain argentique s'estompe un peu sur fond clair */
+html[data-theme='light'] body::after {
+  opacity: 0.035;
+}
+
+/* Sémantique vert/rouge hors photo : contraste garanti dans les deux thèmes.
+   `html[data-theme]` (posé par le script d'init) donne la spécificité
+   nécessaire pour passer devant les styles scopés des composants ; sans JS,
+   les couleurs sombres des composants restent en secours. */
+html[data-theme] .swipe-tag--keep,
+html[data-theme] .swipe-count--keep strong,
+html[data-theme] .hero-chip--kept {
+  color: var(--keep-ink);
+}
+
+html[data-theme] .swipe-tag--reject,
+html[data-theme] .swipe-count--reject strong {
+  color: var(--reject-ink);
+}
+
+/* Cartes en verre dépoli : le flou liquid glass s'applique globalement aux
+   panneaux récurrents (les classes restent stables entre composants).
+   Bordure + ombre par défaut ; un composant peut surcharger (spécificité
+   supérieure via l'attribut de scope Astro). */
+.problem-card,
+.feature-card,
+.privacy-card,
+.pricing-card,
+.faq-item {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Reset minimal */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  position: relative;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  transition:
+    background 0.35s,
+    color 0.35s;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* `hidden` en secours : les Safari iOS < 16 ignorent `clip`, ce qui
+     laissait les animations horizontales élargir la page sur mobile. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/* Lueur ambiante fixe : donne au verre quelque chose à réfracter */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 46rem at 78% 8%, var(--ambient), transparent 60%),
+    radial-gradient(46rem 40rem at 12% 42%, var(--ambient-soft), transparent 60%),
+    radial-gradient(54rem 44rem at 60% 92%, var(--ambient-soft), transparent 62%);
+}
+
+/* Grain argentique : voile de bruit monochrome sur toute la page — référence
+   pellicule, et texture qui rend le verre et les fonds moins « numériques ». */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+img,
+canvas,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(238, 241, 245, 0.22);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(238, 241, 245, 0.7);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ==========================================================================
+   Primitives de layout
+   ========================================================================== */
+
+.container {
+  width: min(var(--container), 100% - 3rem);
+  margin-inline: auto;
+}
+
+.container--narrow {
+  width: min(var(--container-narrow), 100% - 3rem);
+}
+
+.section {
+  padding-block: clamp(4.5rem, 4rem + 4vw, 9rem);
+  position: relative;
+}
+
+/* Sections « alternées » : différence de fond très subtile, pas de contraste dur */
+.section--dim {
+  background: var(--bg-raised);
+}
+
+.section--ink {
+  background: var(--bg-raised);
+}
+
+/* Séparateurs en filet lumineux plutôt qu'en blocs de couleur */
+.section--dim::before,
+.section--ink::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+}
+
+/* ==========================================================================
+   Verre — utilitaire liquid glass réutilisable
+   ========================================================================== */
+
+.glass {
+  position: relative;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Liseré spéculaire haut : la « lèvre » lumineuse du liquid glass */
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, var(--glass-sheen), transparent 40%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Typographie
+   ========================================================================== */
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 1.8em;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.section-title {
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  text-wrap: balance;
+  margin-block: 0.6rem 1rem;
+}
+
+.section-lede {
+  font-size: var(--text-lg);
+  color: var(--text-soft);
+  max-width: 38em;
+  text-wrap: pretty;
+}
+
+/* « accent » = simple emphase claire, sans teinte */
+.accent {
+  color: var(--text);
+}
+
+/* Wordmark Pelicull(e) — le « cull » ressort par la clarté ; les parenthèses
+   marquent ce qui est « cullable » (voir BRANDING.md). */
+.wordmark {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--text-soft);
+}
+
+.wordmark .wordmark-cull {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.wordmark .wordmark-e {
+  color: var(--text);
+}
+
+.wordmark .wordmark-paren {
+  font-weight: 300;
+  color: var(--text-dim);
+}
+
+/* ==========================================================================
+   Composants
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.85em 1.6em;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  color: var(--text);
+  font-weight: 550;
+  font-size: var(--text-sm);
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 1px 0 var(--glass-sheen) inset;
+  transition:
+    transform 0.25s var(--ease-out),
+    background 0.25s,
+    border-color 0.25s,
+    box-shadow 0.25s var(--ease-out);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  background: var(--glass-hover);
+  border-color: var(--glass-border-strong);
+  box-shadow:
+    0 1px 0 var(--glass-sheen) inset,
+    0 12px 34px rgba(0, 0, 0, 0.45);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* CTA principal : surface inversée pleine et nette — pop monochrome, pas de
+   teinte. Opaque + sans flou pour un rendu identique quel que soit le fond. */
+.btn--primary {
+  background: var(--text);
+  color: var(--bg);
+  border-color: transparent;
+  font-weight: 600;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.btn--primary:hover {
+  box-shadow:
+    0 0 0 1px var(--glass-border-strong),
+    0 14px 40px var(--amber-glow);
+}
+
+.btn--ghost {
+  background: transparent;
+  box-shadow: none;
+}
+
+.btn--ghost:hover {
+  background: var(--glass);
+}
+
+/* Badge App Store placeholder */
+.appstore-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.7em 1.3em;
+  border-radius: 14px;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 1px 0 var(--glass-sheen) inset;
+  color: var(--text);
+  line-height: 1.15;
+  cursor: default;
+  user-select: none;
+}
+
+.appstore-badge svg {
+  width: 1.6em;
+  height: 1.6em;
+  flex: none;
+}
+
+.appstore-badge .appstore-badge-sub {
+  display: block;
+  font-size: 0.62em;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+
+.appstore-badge .appstore-badge-main {
+  display: block;
+  font-size: 0.95em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Chips gratuit / premium — monochromes, différenciés par la présence du verre */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.32em 0.9em;
+  border-radius: 999px;
+}
+
+.chip--free {
+  color: var(--text-faint);
+  border: 1px solid var(--glass-border);
+}
+
+.chip--premium {
+  color: var(--text);
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: 0 1px 0 var(--glass-sheen) inset;
+}
+
+/* ==========================================================================
+   Accessibilité mouvement
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

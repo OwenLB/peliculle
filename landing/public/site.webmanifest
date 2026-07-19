@@ -1,0 +1,12 @@
+{
+  "name": "Peliculle",
+  "short_name": "Peliculle",
+  "description": "Trier ses photos depuis la carte SD, sur iPhone.",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#080a0e",
+  "background_color": "#080a0e",
+  "display": "browser"
+}

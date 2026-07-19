@@ -1,0 +1,3549 @@
+{
+  "sourceLanguage" : "fr",
+  "strings" : {
+    "" : {
+      "shouldTranslate" : false
+    },
+    "· %@" : {
+      "shouldTranslate" : false
+    },
+    "« Ajouter » compose la source choisie avec celles déjà dans la grille." : {
+
+    },
+    "« Remplacer » ouvre une nouvelle session sur la source choisie." : {
+
+    },
+    "%@ sera définitivement supprimée de la carte SD. Cette action est irréversible." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ will be permanently deleted from the SD card. This cannot be undone."
+          }
+        }
+      }
+    },
+    "%@ sera supprimée de votre photothèque (récupérable 30 jours dans « Supprimés récemment »)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ will be deleted from your photo library (recoverable for 30 days in Recently Deleted)."
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "shouldTranslate" : false
+    },
+    "%lld à revoir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld to revisit"
+          }
+        }
+      }
+    },
+    "%lld à trier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld to cull"
+          }
+        }
+      }
+    },
+    "%lld autre(s) statut(s)" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld other status"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld other statuses"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld autre statut"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld autres statuts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld derniers jours" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last %lld days"
+          }
+        }
+      }
+    },
+    "%lld enregistrée(s), %lld en échec." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld saved, %lld failed."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@saved@, %2$lld en échec."
+          },
+          "substitutions" : {
+            "saved" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg enregistrée"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg enregistrées"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld étoile(s)" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld star"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld stars"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld étoile"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld étoiles"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld étoile(s) et plus" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld star and up"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld stars and up"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld étoile et plus"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld étoiles et plus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld gardée(s)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld kept"
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld gardée"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld gardées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo ajoutée à « %@ »" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld photo ajoutée à « %2$@ »"
+          }
+        }
+      }
+    },
+    "%lld photo enregistrée" : {
+
+    },
+    "%lld photo(s)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo(s) à trier sur « %@ »." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo left to cull on “%@”."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos left to cull on “%@”."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo à trier sur « %@ »."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos à trier sur « %@ »."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo(s) ajoutée(s) à « %@ », sans déplacement ni copie." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo added to “%@”, nothing moved or copied."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos added to “%@”, nothing moved or copied."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo ajoutée à « %@ », sans déplacement ni copie."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos ajoutées à « %@ », sans déplacement ni copie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo(s) enregistrée(s) dans « %@ ». La carte est restée intacte." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo saved to “%@”. The card was left untouched."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos saved to “%@”. The card was left untouched."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo enregistrée dans « %@ ». La carte est restée intacte."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos enregistrées dans « %@ ». La carte est restée intacte."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo(s) enregistrée(s) dans la pellicule. La carte est restée intacte." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo saved to the camera roll. The card was left untouched."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos saved to the camera roll. The card was left untouched."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo enregistrée dans la pellicule. La carte est restée intacte."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos enregistrées dans la pellicule. La carte est restée intacte."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo(s) ici" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo here"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos here"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo ici"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos ici"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photo(s) sans localisation" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo without location"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos without location"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo sans localisation"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos sans localisation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photos" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld photos ajoutées à « %@ »" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld photos ajoutées à « %2$@ »"
+          }
+        }
+      }
+    },
+    "%lld photos enregistrées" : {
+
+    },
+    "%lld rejetée(s)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld rejected"
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetée"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld rejetée(s) supprimée(s)" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photo deleted"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photos deleted"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetée supprimée"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetées supprimées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld rejetée(s) supprimée(s) de la carte" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photo deleted from the card"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photos deleted from the card"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetée supprimée de la carte"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetées supprimées de la carte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld rejetée(s) supprimée(s) de la carte." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photo deleted from the card."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photos deleted from the card."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetée supprimée de la carte."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetées supprimées de la carte."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld rejetée(s) supprimée(s) de la photothèque" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photo deleted from the library"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photos deleted from the library"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetée supprimée de la photothèque"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetées supprimées de la photothèque"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld rejetée(s) supprimée(s) de la photothèque." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photo deleted from the library."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejected photos deleted from the library."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetée supprimée de la photothèque."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rejetées supprimées de la photothèque."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sélectionnée(s)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld selected"
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sélectionnée"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sélectionnées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sources" : {
+
+    },
+    "%lld suppression(s) en échec." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld deletion failed."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld deletions failed."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld suppression en échec."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld suppressions en échec."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld supprimée(s), %lld en échec." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld deleted, %lld failed."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$#@deleted@, %2$lld en échec."
+          },
+          "substitutions" : {
+            "deleted" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg supprimée"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg supprimées"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sur %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld sur %2$lld"
+          }
+        }
+      }
+    },
+    "+%lld" : {
+
+    },
+    "0,5 seconde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0.5 second"
+          }
+        }
+      }
+    },
+    "1 seconde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 second"
+          }
+        }
+      }
+    },
+    "2 secondes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 seconds"
+          }
+        }
+      }
+    },
+    "À partir du" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        }
+      }
+    },
+    "À propos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "À propos…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About…"
+          }
+        }
+      }
+    },
+    "Accès à la photothèque refusé — modifiable dans Réglages." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo library access denied — you can change this in Settings."
+          }
+        }
+      }
+    },
+    "Accès aux photos requis" : {
+
+    },
+    "Accueil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
+          }
+        }
+      }
+    },
+    "Action" : {
+
+    },
+    "Affichage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display"
+          }
+        }
+      }
+    },
+    "Afficher la note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show rating"
+          }
+        }
+      }
+    },
+    "Ajout à l'album impossible (accès photothèque limité)." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't add to the album (limited photo library access)."
+          }
+        }
+      }
+    },
+    "Ajout à l'album impossible (accès photothèque limité). Rien n'a été modifié." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't add to the album (limited photo library access). Nothing was changed."
+          }
+        }
+      }
+    },
+    "Ajouter" : {
+
+    },
+    "Ajouter %lld photo(s) à l'album" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Add %lld photo to album"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Add %lld photos to album"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Ajouter %lld photo à l'album"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Ajouter %lld photos à l'album"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Ajouter à l'album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to album"
+          }
+        }
+      }
+    },
+    "Ajouter la date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Append date"
+          }
+        }
+      }
+    },
+    "Ajouter la sélection à l'album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add selection to album"
+          }
+        }
+      }
+    },
+    "Album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
+          }
+        }
+      }
+    },
+    "Album « %@ » : les photos de la photothèque y sont ajoutées, les fichiers de la carte copiés dans la pellicule." : {
+
+    },
+    "Album d'enregistrement" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination album"
+          }
+        }
+      }
+    },
+    "Album de destination" : {
+
+    },
+    "Album Photos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos album"
+          }
+        }
+      }
+    },
+    "Album Photos…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos album…"
+          }
+        }
+      }
+    },
+    "Album…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album…"
+          }
+        }
+      }
+    },
+    "Albums récents" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent albums"
+          }
+        }
+      }
+    },
+    "Aller en bas" : {
+
+    },
+    "Aller en haut" : {
+
+    },
+    "Annuler" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Annuler la dernière action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo last action"
+          }
+        }
+      }
+    },
+    "Application" : {
+
+    },
+    "Au" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To"
+          }
+        }
+      }
+    },
+    "Au zoom, l'image bascule en pleine résolution à la demande — le RAW est décodé pour juger la netteté." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When zoomed, the image switches to full resolution on demand — the RAW is decoded so you can judge sharpness."
+          }
+        }
+      }
+    },
+    "Aucun" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "Aucun album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No albums"
+          }
+        }
+      }
+    },
+    "Aucun compte, aucune collecte de données, aucune publicité." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No account, no data collection, no ads."
+          }
+        }
+      }
+    },
+    "Aucune" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "Aucune donnée de prise de vue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No shooting data"
+          }
+        }
+      }
+    },
+    "Aucune photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No photos"
+          }
+        }
+      }
+    },
+    "Aucune photo ne correspond aux filtres sélectionnés." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No photos match the selected filters."
+          }
+        }
+      }
+    },
+    "Aucune photo pour ces filtres" : {
+
+    },
+    "Aujourd'hui" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        }
+      }
+    },
+    "Autorisation d'ajout à la photothèque refusée." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permission to add to the photo library was denied."
+          }
+        }
+      }
+    },
+    "Autres actions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More actions"
+          }
+        }
+      }
+    },
+    "Avec la date : un album par jour dans le contexte du voyage (« Portugal — 8 juil. 2026 »)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With the date: one album per day within the trip (“Portugal — Jul 8, 2026”)."
+          }
+        }
+      }
+    },
+    "Balayez vers le haut pour garder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe up to keep"
+          }
+        }
+      }
+    },
+    "Bande de miniatures" : {
+
+    },
+    "Boîtier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera"
+          }
+        }
+      }
+    },
+    "Borne tout l'affichage (grille, viewer, tri rapide) aux photos prises pendant le voyage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limits everything on screen (grid, viewer, quick cull) to photos taken during the trip."
+          }
+        }
+      }
+    },
+    "Carte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map"
+          }
+        }
+      }
+    },
+    "Carte déconnectée — tri poursuivi sur les autres sources." : {
+
+    },
+    "Carte déconnectée. Reconnectez-la puis resélectionnez le dossier." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card disconnected. Reconnect it, then select the folder again."
+          }
+        }
+      }
+    },
+    "Carte des photos" : {
+
+    },
+    "Carte des photos…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo map…"
+          }
+        }
+      }
+    },
+    "Carte non retrouvée — resélectionnez le dossier." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card not found — select the folder again."
+          }
+        }
+      }
+    },
+    "Carte SD" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SD card"
+          }
+        }
+      }
+    },
+    "Ce dossier ne contient pas d'image lisible." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This folder doesn't contain any readable images."
+          }
+        }
+      }
+    },
+    "Cette source ne contient aucune photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This source doesn't contain any photos."
+          }
+        }
+      }
+    },
+    "Championne" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Champion"
+          }
+        }
+      }
+    },
+    "Chaque jour pendant un voyage actif, un rappel pour trier les photos de la journée. S'arrête à la fin du voyage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every day during an active trip, a reminder to cull the day's photos. Stops when the trip ends."
+          }
+        }
+      }
+    },
+    "Choisir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose"
+          }
+        }
+      }
+    },
+    "Choisir un album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose an album"
+          }
+        }
+      }
+    },
+    "Choisir un dossier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a folder"
+          }
+        }
+      }
+    },
+    "Choisissez un album : les photos de la photothèque s'y rangent (rien à copier), les fichiers de la carte vont dans la pellicule." : {
+
+    },
+    "Choisissez un album de destination : sur la photothèque, garder = ajouter à l'album." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a destination album: on the photo library, keeping = adding to the album."
+          }
+        }
+      }
+    },
+    "Confidentialité" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
+        }
+      }
+    },
+    "Croissant" : {
+
+    },
+    "Dans cette grille" : {
+
+    },
+    "Dans l'album" : {
+
+    },
+    "Daté" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dated"
+          }
+        }
+      }
+    },
+    "Date fichier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File date"
+          }
+        }
+      }
+    },
+    "Date inconnue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown date"
+          }
+        }
+      }
+    },
+    "Dates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dates"
+          }
+        }
+      }
+    },
+    "Dates…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dates…"
+          }
+        }
+      }
+    },
+    "Début" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        }
+      }
+    },
+    "Décroissant" : {
+
+    },
+    "Déjà enregistrée dans la pellicule" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already saved to the camera roll"
+          }
+        }
+      }
+    },
+    "Depuis le %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Since %@"
+          }
+        }
+      }
+    },
+    "Désactivé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "Désactivée" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "Détection de flou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blur detection"
+          }
+        }
+      }
+    },
+    "Diagnostic de session" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session diagnostics"
+          }
+        }
+      }
+    },
+    "Diagnostic de session…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session diagnostics…"
+          }
+        }
+      }
+    },
+    "Disque" : {
+
+    },
+    "Disque externe" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "External drive"
+          }
+        }
+      }
+    },
+    "Dossier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder"
+          }
+        }
+      }
+    },
+    "Dossier / carte SD" : {
+
+    },
+    "Dossier…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder…"
+          }
+        }
+      }
+    },
+    "Dossiers récents" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent folders"
+          }
+        }
+      }
+    },
+    "Double-tapez pour la pleine résolution" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-tap for full resolution"
+          }
+        }
+      }
+    },
+    "Du" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        }
+      }
+    },
+    "Du %@ au %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %1$@ to %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Du %1$@ au %2$@"
+          }
+        }
+      }
+    },
+    "Duel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duel"
+          }
+        }
+      }
+    },
+    "Duel %lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duel %lld / %lld"
+          }
+        }
+      }
+    },
+    "Effacer les dates" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear dates"
+          }
+        }
+      }
+    },
+    "Effacer tous les filtres" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all filters"
+          }
+        }
+      }
+    },
+    "Élire cette photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick this photo"
+          }
+        }
+      }
+    },
+    "Élire la couverture" : {
+
+    },
+    "Enregistrement terminé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving finished"
+          }
+        }
+      }
+    },
+    "Enregistrement… %lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving… %lld / %lld"
+          }
+        }
+      }
+    },
+    "Enregistrer %lld photo(s)" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Save %lld photo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Save %lld photos"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Enregistrer %lld photo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Enregistrer %lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Enregistrer %lld photo(s) · %@" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Save %lld photo · %@"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Save %lld photos · %@"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Enregistrer %lld photo · %@"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Enregistrer %lld photos · %@"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Enregistrer dans la pellicule" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to camera roll"
+          }
+        }
+      }
+    },
+    "Enregistrer la photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save photo"
+          }
+        }
+      }
+    },
+    "Enregistrer la sélection dans la pellicule" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save selection to camera roll"
+          }
+        }
+      }
+    },
+    "Espace insuffisant sur l'iPhone : %@ à enregistrer, %@ disponibles. Libérez de l'espace puis réessayez — rien n'a été enregistré." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not enough space on iPhone: %1$@ to save, %2$@ available. Free up space and try again — nothing has been saved."
+          }
+        }
+      }
+    },
+    "Essayez le Tri rapide" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Quick cull"
+          }
+        }
+      }
+    },
+    "Esthétique" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aesthetics"
+          }
+        }
+      }
+    },
+    "Esthétique %.2f" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aesthetics %.2f"
+          }
+        }
+      }
+    },
+    "État de tri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cull status"
+          }
+        }
+      }
+    },
+    "EXIF" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EXIF"
+          }
+        }
+      }
+    },
+    "Exporter vers Fichiers" : {
+
+    },
+    "Exporter vers Fichiers…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export to Files…"
+          }
+        }
+      }
+    },
+    "Fermer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "Filtrer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter"
+          }
+        }
+      }
+    },
+    "Filtres" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filters"
+          }
+        }
+      }
+    },
+    "Fin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End"
+          }
+        }
+      }
+    },
+    "Fin d'enregistrement" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving finished"
+          }
+        }
+      }
+    },
+    "Flou probable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probably blurry"
+          }
+        }
+      }
+    },
+    "Focale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focal length"
+          }
+        }
+      }
+    },
+    "Format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Format"
+          }
+        }
+      }
+    },
+    "Gardée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kept"
+          }
+        }
+      }
+    },
+    "Gardées" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kept"
+          }
+        }
+      }
+    },
+    "Garder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep"
+          }
+        }
+      }
+    },
+    "Garder = ajouter à l'album « %@ ». Les photos restent où elles sont, rien n'est copié." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeping = adding to the “%@” album. Photos stay where they are, nothing is copied."
+          }
+        }
+      }
+    },
+    "Grand-angle < 35 mm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wide-angle < 35 mm"
+          }
+        }
+      }
+    },
+    "Grouper les rafales" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group bursts"
+          }
+        }
+      }
+    },
+    "Grouper par jour" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group by day"
+          }
+        }
+      }
+    },
+    "Heure" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time"
+          }
+        }
+      }
+    },
+    "Heure du rappel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder time"
+          }
+        }
+      }
+    },
+    "Horizon %+.1f°" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Horizon %+.1f°"
+          }
+        }
+      }
+    },
+    "Hors de l'album" : {
+
+    },
+    "iCloud Drive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud Drive"
+          }
+        }
+      }
+    },
+    "ISO" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ISO"
+          }
+        }
+      }
+    },
+    "Jusqu'au" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until"
+          }
+        }
+      }
+    },
+    "Jusqu'au %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until %@"
+          }
+        }
+      }
+    },
+    "L'enregistrement de %@ a échoué." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving %@ failed."
+          }
+        }
+      }
+    },
+    "La passe du soir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The evening pass"
+          }
+        }
+      }
+    },
+    "La passe du soir ? Les photos du jour n'attendent que le tri." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening pass? Today's photos are ready to cull."
+          }
+        }
+      }
+    },
+    "La photo est gardée et la suivante s'affiche. Les boutons restent toujours disponibles." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The photo is kept and the next one appears. The buttons are always available too."
+          }
+        }
+      }
+    },
+    "La suppression de %@ a échoué." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting %@ failed."
+          }
+        }
+      }
+    },
+    "Le Mode Voyage borne déjà l'affichage — la plage se règle dans le drawer Voyage." : {
+
+    },
+    "Le nom devient l'album d'enregistrement (« %@ »)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The name becomes the destination album (“%@”)."
+          }
+        }
+      }
+    },
+    "Lecture des albums…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading albums…"
+          }
+        }
+      }
+    },
+    "Lecture des photos…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading photos…"
+          }
+        }
+      }
+    },
+    "Lecture des positions…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading locations…"
+          }
+        }
+      }
+    },
+    "Les fichiers seront définitivement supprimés de la carte SD. Cette action est irréversible." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The files will be permanently deleted from the SD card. This cannot be undone."
+          }
+        }
+      }
+    },
+    "Les fichiers seront supprimés de la carte, les photos de la photothèque (récupérables 30 jours). Action irréversible sur la carte." : {
+
+    },
+    "Les photos enregistrées iront dans l'album « %@ ». Nécessite l'accès complet à la photothèque ; sinon elles sont enregistrées sans album." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved photos will go into the “%@” album. Requires full photo library access; otherwise they are saved without an album."
+          }
+        }
+      }
+    },
+    "Les photos prises aujourd'hui" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos taken today"
+          }
+        }
+      }
+    },
+    "Les photos prises en rafale sont regroupées. « Élire » garde la photo affichée et rejette le reste ; « Duel » les départage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Burst photos are grouped into stacks. “Pick” keeps the displayed photo and rejects the rest; “Duel” settles ties."
+          }
+        }
+      }
+    },
+    "Les photos seront enregistrées dans la pellicule, sans album." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos will be saved to the camera roll, without an album."
+          }
+        }
+      }
+    },
+    "Les photos seront supprimées de votre photothèque (récupérables 30 jours dans « Supprimés récemment »)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The photos will be deleted from your photo library (recoverable for 30 days in Recently Deleted)."
+          }
+        }
+      }
+    },
+    "Lieux du dossier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Places from the photos"
+          }
+        }
+      }
+    },
+    "Masquer la note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide rating"
+          }
+        }
+      }
+    },
+    "Masquer le tri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide culling"
+          }
+        }
+      }
+    },
+    "Mode Voyage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip Mode"
+          }
+        }
+      }
+    },
+    "Modifier" : {
+
+    },
+    "Nettes" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharp"
+          }
+        }
+      }
+    },
+    "Netteté" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharpness"
+          }
+        }
+      }
+    },
+    "Nom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "Nom de l'album (Portugal, Lisbonne…)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album name (Portugal, Lisbon…)"
+          }
+        }
+      }
+    },
+    "Nom du voyage (Portugal…)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip name (Portugal…)"
+          }
+        }
+      }
+    },
+    "Nommé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Named"
+          }
+        }
+      }
+    },
+    "Non téléchargées" : {
+
+    },
+    "Non triées" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsorted"
+          }
+        }
+      }
+    },
+    "Normale" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        }
+      }
+    },
+    "Note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rating"
+          }
+        }
+      }
+    },
+    "Note %lld sur 5" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rated %lld out of 5"
+          }
+        }
+      }
+    },
+    "Note minimale" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimum rating"
+          }
+        }
+      }
+    },
+    "Noter la photo" : {
+
+    },
+    "Noter la sélection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate selection"
+          }
+        }
+      }
+    },
+    "Notifications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "Notifications désactivées pour Peliculle — réactivez-les dans Réglages." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are turned off for Peliculle — re-enable them in Settings."
+          }
+        }
+      }
+    },
+    "Notifications…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications…"
+          }
+        }
+      }
+    },
+    "Nouvelle source" : {
+
+    },
+    "Objectif" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lens"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Ordre" : {
+
+    },
+    "Orientation" : {
+
+    },
+    "Ouverture précédente interrompue — resélectionnez la source." : {
+
+    },
+    "Ouvrez la pile pour élire la meilleure" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the stack to pick the best one"
+          }
+        }
+      }
+    },
+    "Ouvrir la période" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open this period"
+          }
+        }
+      }
+    },
+    "Ouvrir la pile" : {
+
+    },
+    "Ouvrir Réglages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        }
+      }
+    },
+    "Partager" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
+    },
+    "Passe terminée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pass complete"
+          }
+        }
+      }
+    },
+    "Paysage" : {
+
+    },
+    "Pelicull(e)" : {
+      "shouldTranslate" : false
+    },
+    "Peliculle" : {
+      "shouldTranslate" : false
+    },
+    "Période personnalisée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom period"
+          }
+        }
+      }
+    },
+    "Photothèque" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo library"
+          }
+        }
+      }
+    },
+    "Pleine résolution…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full resolution…"
+          }
+        }
+      }
+    },
+    "Plus tard" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        }
+      }
+    },
+    "Politique de confidentialité" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Policy"
+          }
+        }
+      }
+    },
+    "Portrait" : {
+
+    },
+    "Position GPS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GPS location"
+          }
+        }
+      }
+    },
+    "Pour trier un album ou toute la photothèque, autorisez l'accès aux photos dans Réglages." : {
+
+    },
+    "Prévient quand un enregistrement se termine alors que l'app n'est plus à l'écran." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifies you when a save finishes while the app is no longer on screen."
+          }
+        }
+      }
+    },
+    "Prise de vue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture date"
+          }
+        }
+      }
+    },
+    "Progression du tri" : {
+
+    },
+    "Quitter sans appliquer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leave without applying"
+          }
+        }
+      }
+    },
+    "Rafales" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bursts"
+          }
+        }
+      }
+    },
+    "Rappel de tri inachevé" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unfinished cull reminder"
+          }
+        }
+      }
+    },
+    "Récents" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recent"
+          }
+        }
+      }
+    },
+    "Refaire une passe sur les ignorées" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do another pass on the skipped ones"
+          }
+        }
+      }
+    },
+    "Réglages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "Réinitialiser les filtres" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset filters"
+          }
+        }
+      }
+    },
+    "Rejetée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejected"
+          }
+        }
+      }
+    },
+    "Rejetées" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rejected"
+          }
+        }
+      }
+    },
+    "Rejeter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reject"
+          }
+        }
+      }
+    },
+    "Remettre à non triée" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark as unsorted"
+          }
+        }
+      }
+    },
+    "Remplacer" : {
+
+    },
+    "Reprendre" : {
+
+    },
+    "Reprendre là où le tri s'est arrêté" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick up where you left off"
+          }
+        }
+      }
+    },
+    "Reprendre le tri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume culling"
+          }
+        }
+      }
+    },
+    "Retirer" : {
+
+    },
+    "Revoir les astuces" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show tips again"
+          }
+        }
+      }
+    },
+    "Rien pour ce filtre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing for this filter"
+          }
+        }
+      }
+    },
+    "S'il reste des photos à trier quand vous quittez l'app, un rappel est programmé à cette heure — annulé dès que vous revenez." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If photos are left to cull when you leave the app, a reminder is scheduled at this time — cancelled as soon as you come back."
+          }
+        }
+      }
+    },
+    "Sans album de destination, il n'y a rien à ranger sur cette source : choisissez un album." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Without a destination album there is nothing to organize on this source: choose an album."
+          }
+        }
+      }
+    },
+    "Sélectionner" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        }
+      }
+    },
+    "Session" : {
+
+    },
+    "Seuil de flou" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blur threshold"
+          }
+        }
+      }
+    },
+    "Seuil de rafale" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Burst threshold"
+          }
+        }
+      }
+    },
+    "Source" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source"
+          }
+        }
+      }
+    },
+    "Source : %@" : {
+
+    },
+    "Sources" : {
+
+    },
+    "Standard 35 – 85 mm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard 35 – 85 mm"
+          }
+        }
+      }
+    },
+    "Stricte" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strict"
+          }
+        }
+      }
+    },
+    "Supprimer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "Supprimer %lld photo(s) ?" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld photo?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete %lld photos?"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Supprimer %lld photo ?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Supprimer %lld photos ?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Supprimer cette photo ?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this photo?"
+          }
+        }
+      }
+    },
+    "Supprimer la sélection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete selection"
+          }
+        }
+      }
+    },
+    "Supprimer les %lld rejetées ?" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete the rejected photo?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Delete the %lld rejected photos?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Supprimer toutes les rejetées (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all rejected (%lld)"
+          }
+        }
+      }
+    },
+    "Sur la date de prise de vue (à défaut, la date du fichier). Les photos sans date sont masquées quand une borne est active." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Based on the capture date (falling back to the file date). Photos without a date are hidden while a bound is active."
+          }
+        }
+      }
+    },
+    "Taille" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        }
+      }
+    },
+    "Télé > 85 mm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telephoto > 85 mm"
+          }
+        }
+      }
+    },
+    "Téléchargées" : {
+
+    },
+    "Téléchargement" : {
+
+    },
+    "Terminer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "Terminer le voyage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End trip"
+          }
+        }
+      }
+    },
+    "Tolérante" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lenient"
+          }
+        }
+      }
+    },
+    "Touchez un voyage pour le reprendre ; balayez pour le supprimer de l'historique." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a trip to resume it; swipe to remove it from the history."
+          }
+        }
+      }
+    },
+    "Tournoi (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tournament (%lld)"
+          }
+        }
+      }
+    },
+    "Tous" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        }
+      }
+    },
+    "Tout garder" : {
+
+    },
+    "Tout rejeter" : {
+
+    },
+    "Tout se passe sur votre appareil : le tri, les aperçus et les signaux d'analyse ne quittent jamais l'iPhone." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything happens on your device: culling, previews and analysis signals never leave your iPhone."
+          }
+        }
+      }
+    },
+    "Toutes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        }
+      }
+    },
+    "Toutes les photos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All photos"
+          }
+        }
+      }
+    },
+    "Toutes les photos…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All photos…"
+          }
+        }
+      }
+    },
+    "Toutes mes photos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All my photos"
+          }
+        }
+      }
+    },
+    "Tri" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Culling"
+          }
+        }
+      }
+    },
+    "Tri rapide" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick cull"
+          }
+        }
+      }
+    },
+    "Trier" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cull"
+          }
+        }
+      }
+    },
+    "Trier par" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort by"
+          }
+        }
+      }
+    },
+    "Triez vos photos directement depuis la carte SD, sans import préalable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort your photos straight from the SD card, no import needed."
+          }
+        }
+      }
+    },
+    "Type d'album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album type"
+          }
+        }
+      }
+    },
+    "Une carte par photo : balayez à droite pour garder, à gauche pour rejeter, vers le haut pour repasser plus tard." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One card per photo: swipe right to keep, left to reject, up to come back to it later."
+          }
+        }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@"
+          }
+        }
+      }
+    },
+    "Vidéo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video"
+          }
+        }
+      }
+    },
+    "Vidéos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Videos"
+          }
+        }
+      }
+    },
+    "Voir %lld photos" : {
+
+    },
+    "Voir 1 photo" : {
+
+    },
+    "Votre carte SD est lue en lecture seule — vos originaux ne sont jamais modifiés." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your SD card is read-only — your originals are never modified."
+          }
+        }
+      }
+    },
+    "Votre photothèque ne contient pas d'album." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your photo library doesn't contain any albums."
+          }
+        }
+      }
+    },
+    "Voyage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip"
+          }
+        }
+      }
+    },
+    "Voyage — %@" : {
+
+    },
+    "Voyage — %@…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip — %@…"
+          }
+        }
+      }
+    },
+    "Voyage — actif" : {
+
+    },
+    "Voyage — actif…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip — active…"
+          }
+        }
+      }
+    },
+    "Voyage en cours" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current trip"
+          }
+        }
+      }
+    },
+    "Voyage en cours (fin ouverte)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ongoing trip (open-ended)"
+          }
+        }
+      }
+    },
+    "Voyage…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip…"
+          }
+        }
+      }
+    },
+    "Voyages passés" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Past trips"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

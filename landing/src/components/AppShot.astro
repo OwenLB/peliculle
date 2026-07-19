@@ -1,0 +1,89 @@
+---
+// Capture d'écran réelle de l'app, en paire clair/sombre : la version qui
+// correspond au thème de la page est visible, l'autre attend en dessous —
+// le basculement du toggle fait un simple crossfade CSS.
+// Les fichiers vivent dans `public/images/screens/{clair,sombre}/` (voir le
+// README de ce dossier pour la préparation des captures).
+//
+// `bar` : reconstruit la barre de statut iOS au-dessus de la capture (dont la
+// vraie barre est rognée). À désactiver pour les écrans qui la masquent dans
+// l'app (comparaison) et pour les fragments d'interface (filtres-section).
+import PhoneStatusBar from './PhoneStatusBar.astro';
+
+interface Props {
+  name: string;
+  width: number;
+  height: number;
+  eager?: boolean;
+  bar?: boolean;
+}
+const { name, width, height, eager = false, bar = false } = Astro.props;
+---
+
+<span class="app-shot" aria-hidden="true">
+  {bar && <PhoneStatusBar />}
+  <span class="app-shot-body">
+    <img
+      class="app-shot-img app-shot-img--dark"
+      src={`/images/screens/sombre/${name}.webp`}
+      {width}
+      {height}
+      alt=""
+      loading={eager ? 'eager' : 'lazy'}
+      fetchpriority={eager ? 'high' : undefined}
+      decoding="async"
+    />
+    <img
+      class="app-shot-img app-shot-img--light"
+      src={`/images/screens/clair/${name}.webp`}
+      {width}
+      {height}
+      alt=""
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+  </span>
+</span>
+
+<!-- `is:global` : les sélecteurs dépendent de `html[data-theme]`, posé hors
+     de la portée du composant. -->
+<style is:global>
+  .app-shot {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    container-type: inline-size;
+  }
+
+  .app-shot-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .app-shot-img {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .app-shot-img--light {
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  html[data-theme='light'] .app-shot-img--light {
+    opacity: 1;
+  }
+
+  /* La sombre s'efface aussi : si la claire n'est pas encore chargée, on
+     montre le fond noir de l'écran plutôt que le mauvais thème. */
+  html[data-theme='light'] .app-shot-img--dark {
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+</style>

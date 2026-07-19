@@ -1,0 +1,373 @@
+---
+import AppShot from './AppShot.astro';
+import WaitlistForm from './WaitlistForm.astro';
+import { useTranslations, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Le « logo strip » de Peliculle : pas de clients à montrer avant le
+// lancement, donc on affiche ce qui rassure un photographe — les formats.
+const formats = ['CR3', 'NEF', 'ARW', 'RAF', 'DNG', 'CR2', 'ORF', 'RW2', 'HEIC', 'JPEG'];
+---
+
+<section class="hero">
+  <div class="hero-halo" aria-hidden="true"></div>
+
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow" data-hero-item>{t('hero.eyebrow')}</p>
+      <h1 class="hero-title">
+        <span class="hero-line" data-hero-line>{t('hero.title.1')}</span>
+        <span class="hero-line" data-hero-line>{t('hero.title.2')}</span>
+        <span class="hero-line hero-line--accent" data-hero-line>{t('hero.title.3')}</span>
+      </h1>
+      <p class="hero-subtitle" data-hero-item>{t('hero.subtitle')}</p>
+
+      <!-- Un seul CTA au-dessus de la ligne de flottaison : la waitlist. -->
+      <div class="hero-actions" data-hero-item>
+        <WaitlistForm lang={lang} id="waitlist" />
+      </div>
+
+      <p class="hero-microcopy" data-hero-item>{t('hero.microcopy')}</p>
+    </div>
+
+    <!-- Le produit, montré tel quel : le vrai écran de tri, capturé dans
+         l'app — la version claire ou sombre suit le thème de la page. -->
+    <div class="hero-visual" data-hero-visual>
+      <span class="hero-paren hero-paren--open" data-hero-paren aria-hidden="true">(</span>
+
+      <figure class="hero-phone" data-hero-phone aria-hidden="true">
+        <div class="hero-screen">
+          <AppShot name="visionneuse-tri" width={800} height={1614} eager bar />
+        </div>
+      </figure>
+
+      <!-- Détails flottants : ce que l'app sait au moment du tri -->
+      <span class="glass hero-chip hero-chip--kept" data-hero-chip aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+          <path d="m5 12.5 4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        {t('swipe.keep')}
+      </span>
+      <span class="glass hero-chip hero-chip--raw" data-hero-chip aria-hidden="true">{t('hero.chip.raw')}</span>
+      <span class="glass hero-chip hero-chip--progress" data-hero-chip aria-hidden="true">
+        <span class="hero-progress-track"><span class="hero-progress-bar"></span></span>
+        127/308 {t('hero.chip.progress')}
+      </span>
+
+      <span class="hero-paren hero-paren--close" data-hero-paren aria-hidden="true">)</span>
+    </div>
+  </div>
+
+  <!-- Fil des formats : l'équivalent Peliculle de la rangée de logos -->
+  <div class="hero-ticker" data-hero-item>
+    <p class="hero-ticker-label">{t('hero.formats.label')}</p>
+    <div class="hero-ticker-viewport" aria-hidden="true">
+      {[0, 1].map(() => (
+        <div class="hero-ticker-row">
+          {formats.map((format) => (
+            <span>{format}</span>
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: clamp(7rem, 12vh, 9rem) 2.4rem;
+    overflow: clip;
+  }
+
+  .hero-halo {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(52rem 40rem at 74% 34%, var(--ambient), transparent 62%),
+      radial-gradient(40rem 30rem at 16% 82%, var(--ambient-soft), transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    align-items: center;
+    gap: 3rem;
+  }
+
+  .hero-title {
+    font-size: var(--text-hero);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+    margin-block: 1.2rem 1.4rem;
+    color: var(--text-soft);
+  }
+
+  .hero-line {
+    display: block;
+  }
+
+  .hero-line--accent {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .hero-subtitle {
+    font-size: var(--text-lg);
+    line-height: 1.65;
+    color: var(--ink-soft);
+    max-width: 30em;
+    text-wrap: pretty;
+    margin-bottom: 2.2rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .hero-microcopy {
+    margin-top: 1.4rem;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+  }
+
+  /* --- Le viewer : la vraie capture, dans un cadre iPhone CSS ------------ */
+
+  .hero-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 26rem;
+  }
+
+  .hero-phone {
+    position: relative;
+    width: min(19rem, 72vw);
+    /* Ratio de la capture + barre de statut reconstruite + liseré du cadre */
+    aspect-ratio: 9 / 18.95;
+    border-radius: 3rem;
+    background: linear-gradient(160deg, #1a1e26 0%, #0c0e13 100%);
+    padding: 0.5rem;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      var(--shadow-lift);
+    rotate: 1.6deg;
+    animation: hero-phone-float 8s ease-in-out infinite alternate;
+  }
+
+  /* `translate` (pas `transform`) : compose avec le transform GSAP de l'intro */
+  @keyframes hero-phone-float {
+    from {
+      translate: 0 5px;
+    }
+
+    to {
+      translate: 0 -9px;
+    }
+  }
+
+  .hero-screen {
+    position: relative;
+    height: 100%;
+    border-radius: 2.55rem;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* --- Chips flottants ---------------------------------------------------- */
+
+  .hero-chip {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.55em 1em;
+    border-radius: 999px;
+    color: var(--text);
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  .hero-chip svg {
+    width: 1em;
+    height: 1em;
+  }
+
+  .hero-chip--kept {
+    top: 17%;
+    right: 2%;
+    color: #8ceab0;
+    border-color: rgba(48, 209, 88, 0.4);
+    animation: hero-chip-float 6s ease-in-out infinite alternate;
+  }
+
+  .hero-chip--raw {
+    top: 42%;
+    left: 0;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--text-soft);
+    animation: hero-chip-float 7s 0.8s ease-in-out infinite alternate-reverse;
+  }
+
+  .hero-chip--progress {
+    bottom: -0.6rem;
+    right: 9%;
+    color: var(--text-soft);
+    animation: hero-chip-float 6.5s 0.4s ease-in-out infinite alternate;
+  }
+
+  @keyframes hero-chip-float {
+    from {
+      translate: 0 4px;
+    }
+
+    to {
+      translate: 0 -6px;
+    }
+  }
+
+  .hero-progress-track {
+    width: 3.2em;
+    height: 0.32em;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    overflow: hidden;
+  }
+
+  .hero-progress-bar {
+    display: block;
+    width: 41%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--text);
+  }
+
+  .hero-paren {
+    position: absolute;
+    top: 50%;
+    font-size: clamp(9rem, 8rem + 8vw, 16rem);
+    font-weight: 200;
+    line-height: 0;
+    color: var(--text);
+    opacity: 0.1;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .hero-paren--open {
+    left: -0.6rem;
+    translate: 0 -50%;
+  }
+
+  .hero-paren--close {
+    right: -0.6rem;
+    translate: 0 -50%;
+  }
+
+  /* --- Ticker des formats -------------------------------------------------- */
+
+  .hero-ticker {
+    position: relative;
+    margin-top: clamp(2.4rem, 2rem + 3vh, 4.5rem);
+    display: grid;
+    gap: 0.8rem;
+    justify-items: center;
+  }
+
+  .hero-ticker-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .hero-ticker-viewport {
+    display: flex;
+    width: min(46rem, 92vw);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  }
+
+  .hero-ticker-row {
+    flex: none;
+    display: flex;
+    align-items: center;
+    animation: hero-ticker-scroll 26s linear infinite;
+  }
+
+  .hero-ticker-row span {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+    padding-inline: 1.7rem;
+    position: relative;
+  }
+
+  .hero-ticker-row span::after {
+    content: '·';
+    position: absolute;
+    right: -0.25em;
+    color: var(--text-dim);
+  }
+
+  @keyframes hero-ticker-scroll {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* --- Responsive ----------------------------------------------------------- */
+
+  @media (max-width: 56rem) {
+    .hero-inner {
+      grid-template-columns: 1fr;
+    }
+
+    /* Sur mobile, le message passe avant le visuel : la proposition de
+       valeur doit être lisible dès le premier écran. */
+    .hero-visual {
+      min-height: 0;
+      margin-top: 1.6rem;
+    }
+
+    .hero-phone {
+      width: min(15rem, 62vw);
+    }
+
+    .hero-chip--raw {
+      left: 2%;
+    }
+
+    .hero-paren {
+      font-size: clamp(5rem, 24vw, 8rem);
+    }
+  }
+</style>

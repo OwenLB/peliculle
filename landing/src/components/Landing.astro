@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from './Nav.astro';
+import Hero from './Hero.astro';
+import Problem from './Problem.astro';
+import HowItWorks from './HowItWorks.astro';
+import SwipeShowcase from './SwipeShowcase.astro';
+import Features from './Features.astro';
+import Privacy from './Privacy.astro';
+import Pricing from './Pricing.astro';
+import Faq from './Faq.astro';
+import FinalCta from './FinalCta.astro';
+import Footer from './Footer.astro';
+import type { Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+
+<Base lang={lang}>
+  <Nav lang={lang} />
+  <main>
+    <Hero lang={lang} />
+    <Problem lang={lang} />
+    <HowItWorks lang={lang} />
+    <SwipeShowcase lang={lang} />
+    <Features lang={lang} />
+    <Privacy lang={lang} />
+    <Pricing lang={lang} />
+    <Faq lang={lang} />
+    <FinalCta lang={lang} />
+  </main>
+  <Footer lang={lang} />
+</Base>
+
+<script>
+  import { initAnimations } from '../scripts/animations';
+
+  initAnimations();
+</script>

@@ -1,0 +1,28 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Package.resolved
+
+# CocoaPods / Carthage (not used, but ignored defensively)
+Pods/
+Carthage/Build/
+
+# IDE
+.idea/
+
+# macOS
+.DS_Store
+
+# Misc
+*.log
