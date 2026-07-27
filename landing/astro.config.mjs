@@ -3,7 +3,7 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://peliculle.com',
+  site: 'https://peliculle.netlify.app',
   integrations: [sitemap()],
   i18n: {
     defaultLocale: 'fr',

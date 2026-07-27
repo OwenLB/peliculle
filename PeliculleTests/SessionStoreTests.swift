@@ -198,4 +198,82 @@ struct SessionStoreTests {
         session.persistNow()
         try await Task.sleep(for: .milliseconds(300))
     }
+
+    // MARK: - Référence (pick)
+
+    /// La « référence » (pick) survit à la reprise de session : persistée dans
+    /// le fichier, restaurée par `apply`.
+    @Test func référenceSurvitLaReprise() async throws {
+        let folder = try Fixtures.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let item = try Fixtures.photo(named: "IMG_7001.jpg", in: folder, size: 7_001)
+
+        let store = await SessionStore.load(for: .folder(folder, kind: .local), items: [item])
+        item.decision = .keep
+        item.isReference = true
+        store.save([item], album: AlbumDestination(), albumConfirmed: false, trip: TripMode())
+        try await Task.sleep(for: .milliseconds(500))
+
+        let reItem = PhotoItem(url: folder.appendingPathComponent("IMG_7001.jpg"))
+        let store2 = await SessionStore.load(for: .folder(folder, kind: .local), items: [reItem])
+        store2.apply(to: [reItem])
+        #expect(reItem.isReference == true)
+        #expect(reItem.decision == .keep)
+
+        // Nettoyage : état vierge → le fichier de session est supprimé.
+        reItem.decision = .undecided
+        reItem.isReference = false
+        store2.save([reItem], album: AlbumDestination(), albumConfirmed: false, trip: TripMode())
+        try await Task.sleep(for: .milliseconds(300))
+    }
+
+    /// `resolve` : une référence (gardée + marquée), une gardée-aussi, une
+    /// rejetée — le tout défait d'un seul ↩︎, à l'identique.
+    @MainActor
+    @Test func resolveMarqueRéférenceGardeAussiEtAnnule() async throws {
+        let folder = try Fixtures.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let a = try Fixtures.photo(named: "A.jpg", in: folder, size: 1)
+        let b = try Fixtures.photo(named: "B.jpg", in: folder, size: 2)
+        let c = try Fixtures.photo(named: "C.jpg", in: folder, size: 3)
+        let source = PhotoSource.folder(folder, kind: .local)
+        let store = await SessionStore.load(for: source, items: [a, b, c])
+        let session = CullSession(source: source, items: [a, b, c], store: store)
+
+        session.resolve(reference: a, keep: [b], reject: [c])
+        #expect(a.decision == .keep && a.isReference)
+        #expect(b.decision == .keep && !b.isReference)
+        #expect(c.decision == .reject && !c.isReference)
+
+        session.undo()
+        #expect(a.decision == .undecided && !a.isReference)
+        #expect(b.decision == .undecided)
+        #expect(c.decision == .undecided)
+
+        session.persistNow()
+        try await Task.sleep(for: .milliseconds(300))
+    }
+
+    /// Rejeter (ou remettre à non triée) une référence efface son marquage :
+    /// une référence est toujours gardée.
+    @MainActor
+    @Test func rejeterUneRéférenceEfaceLeMarquage() async throws {
+        let folder = try Fixtures.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let a = try Fixtures.photo(named: "A.jpg", in: folder, size: 1)
+        let source = PhotoSource.folder(folder, kind: .local)
+        let store = await SessionStore.load(for: source, items: [a])
+        let session = CullSession(source: source, items: [a], store: store)
+
+        session.elect(a, among: [a])
+        #expect(a.decision == .keep && a.isReference)
+
+        session.setDecision(.reject, for: [a])
+        #expect(a.decision == .reject && !a.isReference)
+
+        // Nettoyage.
+        session.setDecision(.undecided, for: [a])
+        session.persistNow()
+        try await Task.sleep(for: .milliseconds(300))
+    }
 }

@@ -15,7 +15,6 @@ struct FilterSheet: View {
     // Tri et affichage (réglages persistants de la grille).
     @Binding var sort: PhotoSort
     @Binding var sortAscending: Bool
-    @Binding var groupBursts: Bool
     @Binding var groupByDay: Bool
 
     /// Les filtres, en **une seule valeur** (revue qualité) : les dix
@@ -33,9 +32,10 @@ struct FilterSheet: View {
     let isFiltering: Bool
     let onReset: () -> Void
 
-    /// Même clé que la grille et la sheet Réglages : le seuil de rafale
-    /// conditionne le toggle de groupement.
-    @AppStorage("burstThreshold") private var burstThreshold = 1.0
+    /// Repérage des similaires dans la grille (badge ≈ en place, sans empiler
+    /// ni réordonner) — même clé que `GridView`. La sensibilité et le mode se
+    /// règlent dans ⚙️.
+    @AppStorage("similarityBadges") private var similarityBadges = true
 
     @State private var showMap = false
     @Environment(\.dismiss) private var dismiss
@@ -139,11 +139,11 @@ struct FilterSheet: View {
                 Text("Décroissant").tag(false)
             }
             .pickerStyle(.segmented)
-            if burstThreshold > 0 {
-                Toggle(isOn: $groupBursts) {
-                    Label("Grouper les rafales", systemImage: "square.stack")
-                        .foregroundStyle(.primary)
-                }
+            // Similaires (culling assisté) : badge ≈ en place sur les photos
+            // qui ont des sosies — ne replie rien, ne réordonne rien.
+            Toggle(isOn: $similarityBadges) {
+                Label("Repérer les similaires", systemImage: "square.on.square.dashed")
+                    .foregroundStyle(.primary)
             }
             Toggle(isOn: $groupByDay) {
                 Label("Grouper par jour", systemImage: "calendar")

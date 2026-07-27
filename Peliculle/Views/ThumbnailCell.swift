@@ -74,8 +74,16 @@ struct ThumbnailCell: View {
     // Badges partagés avec le viewer (voir `StatusBadges.swift`).
 
     private var decisionBadge: some View {
-        DecisionBadge(decision: item.decision, font: .title3)
-            .padding(5)
+        Group {
+            // Une référence est forcément gardée : son étoile remplace la coche
+            // verte (un seul badge en haut à droite, pas les deux).
+            if item.isReference {
+                ReferenceBadge(font: .title3)
+            } else {
+                DecisionBadge(decision: item.decision, font: .title3)
+            }
+        }
+        .padding(5)
     }
 
     /// Signale qu'une copie est déjà dans la pellicule (cette session).

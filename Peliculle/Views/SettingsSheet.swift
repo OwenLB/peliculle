@@ -10,8 +10,10 @@ import SwiftUI
 struct SettingsSheet: View {
     let session: CullSession
 
-    /// Même clé que la grille (`GridView`) et la sheet Filtres.
-    @AppStorage("burstThreshold") private var burstThreshold = 1.0
+    // Similaires (culling assisté) — réglages **globaux** partagés par le Tri
+    // rapide (`QuickCullView`) et le repérage dans la grille (`GridView`).
+    @AppStorage("similaritySensitivity") private var similaritySensitivity = SimilaritySensitivity.normal
+    @AppStorage("similarityAutoDuel") private var similarityAutoDuel = false
 
     @State private var showAlbumSettings = false
     @State private var showTripSettings = false
@@ -25,7 +27,7 @@ struct SettingsSheet: View {
         NavigationStack {
             List {
                 sessionSection
-                displaySection
+                similaritySection
                 applicationSection
             }
             .navigationTitle("Réglages")
@@ -102,17 +104,24 @@ struct SettingsSheet: View {
         .buttonStyle(.plain)
     }
 
-    private var displaySection: some View {
-        Section("Rafales") {
-            // Idée 3 — sensibilité du groupement : dépend de la cadence de
-            // l'appareil (0 = désactivé).
-            Picker("Rafales", systemImage: "square.stack", selection: $burstThreshold) {
-                Text("Désactivé").tag(0.0)
-                Text("0,5 seconde").tag(0.5)
-                Text("1 seconde").tag(1.0)
-                Text("2 secondes").tag(2.0)
+    /// Similaires (culling assisté) : sensibilité visuelle (partagée grille +
+    /// Tri rapide) et auto-ouverture du tournoi.
+    private var similaritySection: some View {
+        Section {
+            Picker("Sensibilité", systemImage: "slider.horizontal.3", selection: $similaritySensitivity) {
+                ForEach(SimilaritySensitivity.allCases) { option in
+                    Text(option.label).tag(option)
+                }
             }
             .foregroundStyle(.primary)
+            Toggle(isOn: $similarityAutoDuel) {
+                Label("Ouvrir le tournoi automatiquement", systemImage: "rectangle.split.2x1")
+                    .foregroundStyle(.primary)
+            }
+        } header: {
+            Text("Similaires")
+        } footer: {
+            Text("Les photos qui se ressemblent sont signalées d'un badge (grille et Tri rapide) et se départagent en tournoi. La sensibilité règle la tolérance visuelle — à affiner selon vos photos. Le repérage dans la grille s'active dans les Filtres.")
         }
     }
 

@@ -79,15 +79,15 @@ struct QuickCullView: View {
     let sourceItems: [PhotoItem]
 
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("burstThreshold") private var burstThreshold = 1.0
-    @AppStorage("burstGrouping") private var groupBursts = true
+    @AppStorage("similaritySensitivity") private var sensitivity = SimilaritySensitivity.normal
+    @AppStorage("similarityAutoDuel") private var autoDuel = false
 
-    /// Une carte : photo seule ou pile de rafale entière (idée 3).
+    /// Une carte = **une** photo (plus de regroupement en piles). Les sosies
+    /// sont juste signalés (`similarGroups`) et se départagent en tournoi.
     private struct Card: Identifiable {
         let items: [PhotoItem]
         var id: PhotoItem.ID { items[0].id }
         var cover: PhotoItem { items[0] }
-        var isStack: Bool { items.count > 1 }
     }
 
     private enum Action {
@@ -98,6 +98,11 @@ struct QuickCullView: View {
 
     @State private var queue: [Card] = []
     @State private var didSetup = false
+    /// Sosies détectés sur le périmètre de la passe (id → membres du groupe) —
+    /// alimente le badge ≈ de la carte et le tournoi qu'il lance. Rempli par
+    /// une passe Vision de fond ; les cartes s'affichent avant, les badges
+    /// apparaissent quand c'est prêt.
+    @State private var similarGroups: [PhotoItem.ID: [PhotoItem]] = [:]
     /// Journal de la passe pour le ↩︎ local (les décisions passent aussi par
     /// le journal de la session, `session.undo()` les défait).
     @State private var history: [(card: Card, action: Action)] = []
@@ -136,7 +141,10 @@ struct QuickCullView: View {
             ZStack {
                 // Fond adaptatif : suit l'apparence claire/sombre de l'iPhone.
                 Color(.systemBackground).ignoresSafeArea()
-                if finished || queue.isEmpty {
+                if !didSetup {
+                    // Construction des cartes (instantanée) : le fond suffit.
+                    Color(.systemBackground)
+                } else if finished || queue.isEmpty {
                     summaryView
                 } else {
                     // Barre de progression épinglée en haut, boutons épinglés
@@ -172,10 +180,18 @@ struct QuickCullView: View {
             .fullScreenCover(item: $duelContext) { context in
                 DuelView(session: session, contenders: context.items) { applied in
                     duelContext = nil
-                    if applied { removeResolvedStack(context.items) }
+                    if applied { removeResolvedGroup(context.items) }
                 }
             }
-            .task { setupIfNeeded() }
+            .task {
+                setupIfNeeded()
+                await computeSimilarGroups()
+            }
+            // Auto-ouverture : une carte à sosies arrive en tête → tournoi
+            // (voir `maybeAutoDuel`). Redéclenché aussi quand les groupes
+            // finissent de se calculer (la carte de tête peut en gagner un).
+            .onChange(of: queue.first?.id) { _, _ in maybeAutoDuel() }
+            .onChange(of: similarGroups.isEmpty) { _, _ in maybeAutoDuel() }
         }
     }
 
@@ -252,8 +268,8 @@ struct QuickCullView: View {
                 // l'action.
                 onSwipeUp: {}
             )
-            if card.isStack {
-                stackControls(card)
+            if let group = similarGroups[card.cover.id], group.count > 1 {
+                similarControls(group)
             }
         }
         .aspectRatio(ratio, contentMode: .fit)
@@ -334,23 +350,25 @@ struct QuickCullView: View {
         }
     }
 
-    /// Badge de pile + bouton Duel (idées 3/4) sur les cartes de rafale.
-    private func stackControls(_ card: Card) -> some View {
+    /// Carte à sosies : badge ≈ + bouton pour lancer le tournoi sur le groupe.
+    /// La carte reste **une** photo (swipe = décide juste celle-ci) ; le
+    /// tournoi, lui, résout tout le groupe.
+    private func similarControls(_ group: [PhotoItem]) -> some View {
         VStack {
             HStack {
-                Label("\(card.items.count)", systemImage: "square.stack")
+                Label("\(group.count)", systemImage: "square.on.square.dashed")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.black.opacity(0.55), in: .capsule)
+                    .background(.teal.opacity(0.9), in: .capsule)
                 Spacer()
             }
             Spacer()
             Button {
-                duelContext = DuelContext(items: card.items)
+                duelContext = DuelContext(items: group)
             } label: {
-                Label("Duel", systemImage: "rectangle.split.2x1")
+                Label("Départager (\(group.count))", systemImage: "rectangle.split.2x1")
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
@@ -458,19 +476,33 @@ struct QuickCullView: View {
         }
     }
 
-    /// Duel appliqué depuis une carte de pile : la pile est départagée (une
-    /// gardée, le reste rejeté par `DuelView`), sa carte quitte la file. Le
-    /// ↩︎ de la session sait défaire l'élection ; elle ne rentre pas dans le
+    /// Tournoi appliqué (`DuelView`) : **tout le groupe** est résolu (référence
+    /// + gardées-aussi, le reste rejeté). Toutes ses cartes quittent la file —
+    /// chaque membre étant sa propre carte, on les retire d'un coup. Le ↩︎ de
+    /// la session sait défaire la résolution ; elle ne rentre pas dans le
     /// journal local de la passe.
-    private func removeResolvedStack(_ items: [PhotoItem]) {
-        guard let index = queue.firstIndex(where: { $0.id == items[0].id }) else { return }
-        let card = queue.remove(at: index)
-        keptCount += 1
-        rejectedCount += card.items.count - 1
-        ignoredIDs.remove(card.id)
+    private func removeResolvedGroup(_ group: [PhotoItem]) {
+        let ids = Set(group.map(\.id))
+        let removed = queue.filter { ids.contains($0.cover.id) }
+        queue.removeAll { ids.contains($0.cover.id) }
+        for card in removed {
+            keptCount += card.items.filter { $0.decision == .keep }.count
+            rejectedCount += card.items.filter { $0.decision == .reject }.count
+            ignoredIDs.remove(card.id)
+        }
         if !queue.isEmpty, queue.allSatisfy({ ignoredIDs.contains($0.id) }) {
             finished = true
         }
+    }
+
+    /// Auto-ouverture du tournoi (réglage ⚙️) : dès qu'une carte à sosies
+    /// arrive en tête, le tournoi s'ouvre sur son groupe. Quitter (✕) laisse la
+    /// carte en place sans le rouvrir (l'`id` de tête n'a pas changé).
+    private func maybeAutoDuel() {
+        guard autoDuel, duelContext == nil, !isExiting,
+              let top = queue.first,
+              let group = similarGroups[top.cover.id], group.count > 1 else { return }
+        duelContext = DuelContext(items: group)
     }
 
     // MARK: - Boutons de repli
@@ -570,19 +602,38 @@ struct QuickCullView: View {
     private func setupIfNeeded() {
         guard !didSetup else { return }
         didSetup = true
-        queue = makeCards(from: sourceItems)
+        // Une carte par photo, dans l'ordre d'affichage — plus de regroupement.
+        queue = sourceItems.map { Card(items: [$0]) }
     }
 
-    /// Une carte par photo, sauf rafales groupées (mêmes réglages ⚙️ que la
-    /// grille) : une carte par **pile**, dans l'ordre d'affichage.
-    private func makeCards(from items: [PhotoItem]) -> [Card] {
-        guard groupBursts else { return items.map { Card(items: [$0]) } }
-        return BurstGrouper.entries(in: items, threshold: burstThreshold)
-            .map { entry -> Card in
-                switch entry {
-                case .single(let item): Card(items: [item])
-                case .stack(let members, _): Card(items: members)
-                }
-            }
+    /// Passe de fond : empreintes Vision + regroupement des sosies sur le
+    /// **périmètre du tri rapide** (id → membres). Sans réseau, caché ⇒
+    /// instantané ensuite. Les cartes sont déjà à l'écran ; les badges ≈
+    /// apparaissent quand c'est prêt, puis on tente l'auto-ouverture.
+    private func computeSimilarGroups() async {
+        let items = sourceItems.filter { !$0.isVideo }
+        guard items.count > 1 else { return }
+        let descriptors = items.map {
+            SimilarityIndex.Descriptor(
+                id: $0.id,
+                backing: $0.backing,
+                // Date de prise de vue (EXIF, repli fichier).
+                date: $0.captureDate ?? .distantPast
+            )
+        }
+        let byID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let groups = await SimilarityIndex.shared.clusters(
+            for: descriptors,
+            maxInterval: similarityMaxInterval(for: descriptors.count),
+            maxDistance: sensitivity.maxDistance
+        )
+        var map: [PhotoItem.ID: [PhotoItem]] = [:]
+        for group in groups {
+            let members = group.compactMap { byID[$0] }
+            guard members.count > 1 else { continue }
+            for member in members { map[member.id] = members }
+        }
+        similarGroups = map
+        maybeAutoDuel()
     }
 }

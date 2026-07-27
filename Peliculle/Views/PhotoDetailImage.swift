@@ -27,13 +27,27 @@ struct PhotoDetailImage: View {
     /// photo plein écran, autant lui servir le vrai piqué.
     var onSingleTap: () -> Void
     var onSwipeUp: () -> Void
+    /// Navigation horizontale (swipe directionnel) : gauche = suivante, droite
+    /// = précédente. Voir `ZoomableImageView`.
+    var onSwipeLeft: () -> Void = {}
+    var onSwipeRight: () -> Void = {}
+    /// Idée 13 — décision en cours de confirmation **sur cette page** (nil
+    /// ailleurs) : le liseré teinté est dessiné **autour de la carte photo**,
+    /// pas de l'écran, en s'insérant dans le cadre. `flashID` change à chaque
+    /// décision pour rejouer le fondu.
+    var flash: CullDecision? = nil
+    var flashID: Int = 0
 
     @State private var preview: UIImage?
     @State private var fullRes: UIImage?
     @State private var isLoadingFull = false
     @State private var didRequestFull = false
 
-    private let previewPixels = 2048
+    /// Plus grand côté de l'aperçu plein écran. `static` pour que le viewer
+    /// **préchauffe** les pages voisines à la même taille (cache partagé) —
+    /// sinon la page d'à côté ne décode qu'une fois atteinte et le défilement
+    /// « remplace » la photo au lieu de la faire glisser.
+    static let previewPixels = 2048
 
     var body: some View {
         if item.isVideo, let url = item.url {
@@ -63,10 +77,23 @@ struct PhotoDetailImage: View {
         }
     }
 
-    /// Ratio largeur/hauteur de l'image chargée (nil tant que rien n'est
+    /// Aperçu déjà en **cache** (lecture synchrone, `ImageCache`) : la page
+    /// voisine, préchauffée par le viewer, s'affiche **dès le premier rendu**
+    /// sans saut asynchrone ni spinner — le défilement glisse alors sur une
+    /// vraie image au lieu de la « remplacer » une fois la page atteinte.
+    private var cachedPreview: UIImage? {
+        ImageCache.shared.image(for: item.cacheKey, maxPixel: Self.previewPixels)
+    }
+
+    /// Image à afficher, par ordre de fidélité : pleine résolution → aperçu
+    /// chargé → aperçu en cache (synchrone). Nil seulement si rien n'est encore
+    /// disponible (première photo jamais préchauffée).
+    private var displayImage: UIImage? { fullRes ?? preview ?? cachedPreview }
+
+    /// Ratio largeur/hauteur de l'image affichée (nil tant que rien n'est
     /// disponible) — sert à dimensionner la carte pour qu'elle épouse la photo.
     private var imageAspect: CGFloat? {
-        guard let size = (fullRes ?? preview)?.size, size.width > 0, size.height > 0 else {
+        guard let size = displayImage?.size, size.width > 0, size.height > 0 else {
             return nil
         }
         return size.width / size.height
@@ -75,7 +102,7 @@ struct PhotoDetailImage: View {
     private var photoBody: some View {
         ZStack {
             ZoomableImageView(
-                image: fullRes ?? preview,
+                image: displayImage,
                 onZoomChange: { zoomed in
                     onZoomChange(zoomed)
                     if zoomed { requestFullResolution() }
@@ -84,10 +111,12 @@ struct PhotoDetailImage: View {
                     requestFullResolution()
                     onSingleTap()
                 },
-                onSwipeUp: onSwipeUp
+                onSwipeUp: onSwipeUp,
+                onSwipeLeft: onSwipeLeft,
+                onSwipeRight: onSwipeRight
             )
 
-            if preview == nil {
+            if displayImage == nil {
                 ProgressView()
                     .controlSize(.large)
                     .tint(.white)
@@ -95,6 +124,19 @@ struct PhotoDetailImage: View {
 
             if isLoadingFull {
                 loadingBadge
+            }
+
+            // Liseré de décision **autour de la carte** (pas de l'écran) : dans
+            // le ZStack cadré par `FramedPhoto`, il épouse la photo et son
+            // arrondi. Se rejoue à chaque décision (`flashID`).
+            if let flash {
+                // Même arrondi que le `clipShape` de `FramedPhoto` : carré en
+                // plein écran (bord à bord), arrondi quand la photo est en carte.
+                DecisionFlashBorder(
+                    decision: flash,
+                    cornerRadius: (framed && imageAspect != nil) ? cornerRadius : 0
+                )
+                .id(flashID)
             }
         }
         .modifier(FramedPhoto(
@@ -104,7 +146,11 @@ struct PhotoDetailImage: View {
             topInset: topInset
         ))
         .task(id: item.id) {
-            preview = await ThumbnailLoader.load(item: item, maxPixel: previewPixels)
+            // Cache déjà chaud (préchauffage voisin) : rien à décoder, on garde
+            // l'affichage synchrone. Sinon on charge et on mémorise.
+            if cachedPreview == nil {
+                preview = await ThumbnailLoader.load(item: item, maxPixel: Self.previewPixels)
+            }
         }
     }
 

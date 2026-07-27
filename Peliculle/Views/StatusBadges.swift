@@ -19,6 +19,21 @@ struct SavedBadge: View {
     }
 }
 
+/// « Référence » (pick) : LA préférée d'un groupe, gardée et marquée. S'affiche
+/// **à la place** de la coche « gardée » (une référence est forcément gardée) —
+/// étoile cerclée jaune, distincte de la note (étoile pleine sur capsule).
+struct ReferenceBadge: View {
+    var font: Font = .body
+
+    var body: some View {
+        Image(systemName: "star.circle.fill")
+            .font(font)
+            .foregroundStyle(.white, .yellow)
+            .shadow(radius: 2)
+            .accessibilityLabel("Référence")
+    }
+}
+
 /// Décision de tri (F5) ; rien tant que la photo n'est pas triée.
 struct DecisionBadge: View {
     let decision: CullDecision

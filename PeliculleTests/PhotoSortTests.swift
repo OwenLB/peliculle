@@ -80,6 +80,46 @@ struct PhotoSortTests {
         #expect(PhotoSort.aesthetic.areInOrder(heavy, light, ascending: false))
     }
 
+    /// Le tri **décoré** (`sorted(_:ascending:)`, perf grille) doit produire
+    /// exactement l'ordre du comparateur de référence (`areInOrder`) — sur
+    /// tous les critères, dans les deux sens, avec des égalités à départager
+    /// à chaque étage (dates, notes, tailles, scores partiels).
+    @Test func triDécoréÉquivautAuComparateur() throws {
+        let folder = try Fixtures.makeFolder()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        var items: [PhotoItem] = []
+        for i in 0..<12 {
+            let item = try Fixtures.photo(
+                named: "IMG_\(i % 2 == 0 ? i : 20 - i).jpg",
+                in: folder,
+                date: epoch.addingTimeInterval(Double((i * 7) % 5) * 60),
+                size: [100, 5_000, 100][i % 3]
+            )
+            item.rating = i % 3
+            if i % 4 == 0 {
+                var exif = PhotoExif()
+                exif.captureDate = epoch.addingTimeInterval(Double(11 - i) * 30)
+                item.exif = exif
+            }
+            if i % 3 == 0 {
+                var analysis = PhotoAnalysis()
+                analysis.aestheticScore = Double(i % 5) / 5
+                item.analysis = analysis
+            }
+            items.append(item)
+        }
+        for sort in PhotoSort.allCases {
+            for ascending in [true, false] {
+                let expected = items.sorted { sort.areInOrder($0, $1, ascending: ascending) }
+                let decorated = sort.sorted(items, ascending: ascending)
+                #expect(
+                    decorated.map(\.filename) == expected.map(\.filename),
+                    "critère \(sort.rawValue), ascending \(ascending)"
+                )
+            }
+        }
+    }
+
     @Test func sensParDéfautParCritère() {
         #expect(PhotoSort.captureDate.defaultAscending)
         #expect(PhotoSort.date.defaultAscending)

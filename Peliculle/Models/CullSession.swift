@@ -74,12 +74,28 @@ final class CullSession {
             let item: PhotoItem
             let decision: CullDecision
             let rating: Int
+            let isReference: Bool
         }
         var changes: [Change]
     }
 
     private var undoStack: [UndoEntry] = []
     var canUndo: Bool { !undoStack.isEmpty }
+
+    /// Révision de l'état de tri : incrémentée à chaque changement susceptible
+    /// d'affecter le filtre, l'ordre ou les comptes de la grille — décisions,
+    /// notes, undo, ajout/retrait de photos ou de sources, marquages
+    /// d'enregistrement (toutes ces mutations passent par `persistSoon`), et
+    /// raffinements en lot des passes de fond (`noteItemsRefined`). Clé du
+    /// cache des dérivés de la grille (`GridView.RenderDerived`) et des
+    /// comptes ci-dessous. Observable : la lire pendant un rendu suffit à être
+    /// invalidé au bump suivant.
+    private(set) var revision = 0
+
+    /// À appeler après un **lot** de raffinements appliqués hors des mutations
+    /// de session (passes EXIF/Vision/lieux de la grille, fiche du viewer) :
+    /// un bump par lot, jamais par photo.
+    func noteItemsRefined() { revision &+= 1 }
 
     /// Album de destination des enregistrements (idée 8bis). Mutable en
     /// direct par l'UI (bindings du réglage) ; chaque changement repart vers
@@ -234,9 +250,16 @@ final class CullSession {
     // MARK: - Mutations de tri (annulables)
 
     /// Applique une décision à une ou plusieurs photos. Les photos déjà dans
-    /// cet état sont ignorées : pas d'entrée d'annulation fantôme.
+    /// cet état sont ignorées : pas d'entrée d'annulation fantôme. Une
+    /// **référence** implique keep : la sortir de keep (rejet, remise à non
+    /// triée) efface son marquage — donc ces photos comptent aussi comme
+    /// « changées » même si leur décision ne bouge pas.
     func setDecision(_ decision: CullDecision, for targets: [PhotoItem]) {
-        mutate(targets.filter { $0.decision != decision }) { $0.decision = decision }
+        let changed = targets.filter { $0.decision != decision || (decision != .keep && $0.isReference) }
+        mutate(changed) { item in
+            item.decision = decision
+            if decision != .keep { item.isReference = false }
+        }
     }
 
     /// Applique une note 0–5 à une ou plusieurs photos.
@@ -245,16 +268,33 @@ final class CullSession {
     }
 
     /// Idées 3/4 — élit la meilleure photo d'une pile ou d'un duel : garde la
-    /// gagnante, rejette toutes les autres du groupe. **Une seule** entrée
-    /// d'annulation : un ↩︎ restaure tout le groupe.
+    /// gagnante **et la marque référence**, rejette toutes les autres. Cas
+    /// particulier de `resolve` sans gardées-aussi.
     func elect(_ winner: PhotoItem, among group: [PhotoItem]) {
-        let changed = group.filter { item in
-            item.id == winner.id ? item.decision != .keep : item.decision != .reject
+        resolve(reference: winner, keep: [], reject: group.filter { $0.id != winner.id })
+    }
+
+    /// Résout un groupe départagé (tournoi/duel) en **une seule entrée
+    /// d'annulation** : une **référence** (la préférée, gardée + marquée), des
+    /// **gardées aussi** (sympas, conservées sans être la référence), le
+    /// **reste rejeté**. Un ↩︎ restaure tout le groupe d'un coup.
+    func resolve(reference: PhotoItem, keep: [PhotoItem], reject: [PhotoItem]) {
+        let needsChange = reference.decision != .keep || !reference.isReference
+            || keep.contains { $0.decision != .keep || $0.isReference }
+            || reject.contains { $0.decision != .reject || $0.isReference }
+        guard needsChange else { return }
+        // Tout le groupe entre dans l'entrée d'annulation (même les inchangés) :
+        // un ↩︎ le restaure intégralement, à l'identique.
+        pushUndo(for: [reference] + keep + reject)
+        reference.decision = .keep
+        reference.isReference = true
+        for item in keep {
+            item.decision = .keep
+            item.isReference = false
         }
-        guard !changed.isEmpty else { return }
-        pushUndo(for: changed)
-        for item in changed {
-            item.decision = item.id == winner.id ? .keep : .reject
+        for item in reject {
+            item.decision = .reject
+            item.isReference = false
         }
         persistSoon()
     }
@@ -268,7 +308,7 @@ final class CullSession {
 
     private func pushUndo(for changed: [PhotoItem]) {
         undoStack.append(UndoEntry(changes: changed.map {
-            UndoEntry.Change(item: $0, decision: $0.decision, rating: $0.rating)
+            UndoEntry.Change(item: $0, decision: $0.decision, rating: $0.rating, isReference: $0.isReference)
         }))
         // Borne large : au-delà, les entrées les plus anciennes n'ont plus de
         // sens pour l'utilisateur et ne valent pas leur mémoire.
@@ -281,6 +321,7 @@ final class CullSession {
         for change in entry.changes {
             change.item.decision = change.decision
             change.item.rating = change.rating
+            change.item.isReference = change.isReference
         }
         persistSoon()
     }
@@ -305,6 +346,10 @@ final class CullSession {
     /// Sauvegarde débouncée : le tri rapide enchaîne les gestes, inutile
     /// d'écrire le fichier à chacun.
     func persistSoon() {
+        // Toute mutation d'état (décisions, notes, undo, sources, marquages
+        // `savedToLibrary` via `SaveFlow`/réconciliation) passe par ici : un
+        // seul point de bump pour la révision.
+        revision &+= 1
         saveTask?.cancel()
         saveTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(1))
@@ -328,7 +373,35 @@ final class CullSession {
     // MARK: - Lectures
 
     var keepers: [PhotoItem] { items.filter { $0.decision == .keep } }
-    var keeperCount: Int { keepers.count }
 
     var rejected: [PhotoItem] { items.filter { $0.decision == .reject } }
+
+    /// Comptes de décisions **cachés par révision** : `keeperCount` est lu à
+    /// chaque rendu de l'en-tête du viewer (donc à chaque swipe), le compte
+    /// des rejetées à chaque rendu de la grille — re-filtrer 10 000 photos à
+    /// chaque passe se sentait. La lecture de `revision` (observable) garde
+    /// l'invalidation automatique ; la passe O(n) ne se refait qu'après une
+    /// mutation.
+    var keeperCount: Int { decisionCounts().keep }
+    var rejectedCount: Int { decisionCounts().reject }
+
+    /// Cache non observé : le remplir pendant un rendu n'invalide rien (même
+    /// principe que `GridView.RenderDerived`).
+    @ObservationIgnored private var cachedCounts = (revision: -1, keep: 0, reject: 0)
+
+    private func decisionCounts() -> (keep: Int, reject: Int) {
+        if cachedCounts.revision != revision {
+            var keep = 0
+            var reject = 0
+            for item in items {
+                switch item.decision {
+                case .keep: keep += 1
+                case .reject: reject += 1
+                case .undecided: break
+                }
+            }
+            cachedCounts = (revision, keep, reject)
+        }
+        return (cachedCounts.keep, cachedCounts.reject)
+    }
 }

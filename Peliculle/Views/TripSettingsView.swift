@@ -12,6 +12,16 @@ import SwiftUI
 struct TripSettingsView: View {
     @Bindable var session: CullSession
 
+    /// Nombre de gardées du voyage encore absentes de l'album — alimente le
+    /// bouton « Synchroniser » et sert de garde à sa visibilité. 0 (défaut) =
+    /// entrée masquée : les appelants sans de quoi la câbler (⚙️ Réglages,
+    /// qui n'a pas les dérivés de la grille) ne l'affichent tout simplement
+    /// pas, plutôt qu'un bouton inerte.
+    var syncableCount = 0
+    /// Lance la synchronisation — le calcul (cible, flux d'enregistrement,
+    /// progression, toast) vit côté grille. Défaut inerte.
+    var onSync: () -> Void = {}
+
     /// Historique hors voyage en cours — copie locale rechargée après chaque
     /// mutation : le balayage de suppression retire l'entrée de la liste,
     /// du registre **et** des sessions persistées (voir `deleteTrips`).
@@ -22,6 +32,32 @@ struct TripSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // « Synchroniser l'album » : range d'un coup les gardées du
+                // voyage pas encore dans l'album (additif — voir ROADMAP).
+                // En tête du drawer, c'est l'action du voyage la plus
+                // fréquente ; masquée quand il n'y a rien à ranger.
+                if syncableCount > 0 {
+                    Section {
+                        Button {
+                            onSync()
+                            dismiss()
+                        } label: {
+                            Label {
+                                HStack {
+                                    Text("Synchroniser l'album")
+                                    Spacer()
+                                    Text("\(syncableCount)")
+                                        .foregroundStyle(.secondary)
+                                        .monospacedDigit()
+                                }
+                            } icon: {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                            }
+                        }
+                    } footer: {
+                        Text("Ajoute d'un coup les \(syncableCount) gardée(s) du voyage encore absentes de l'album. N'en retire jamais.")
+                    }
+                }
                 Section {
                     Toggle("Mode Voyage", isOn: isActive)
                 } footer: {

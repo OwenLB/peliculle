@@ -29,6 +29,9 @@ final class SessionStore {
         /// (Batch H5, ① déduplication). Optionnel pour rester décodable depuis
         /// les fichiers d'avant ce batch et pour les assets (rien créé).
         var savedAssetID: String?
+        /// « Référence » (pick) de la photo. Optionnel → décodable depuis les
+        /// fichiers d'avant cette feature (absent = pas une référence).
+        var isReference: Bool?
     }
 
     private nonisolated struct Payload: Codable {
@@ -317,6 +320,7 @@ final class SessionStore {
             item.rating = record.rating
             item.savedToLibrary = record.savedToLibrary
             item.savedAssetID = record.savedAssetID
+            item.isReference = record.isReference ?? false
             if record.decision != .undecided || record.rating > 0 { restored += 1 }
         }
         return restored
@@ -331,14 +335,15 @@ final class SessionStore {
     func save(_ items: [PhotoItem], album: AlbumDestination, albumConfirmed: Bool, trip: TripMode) {
         var snapshot: [String: Record] = [:]
         for item in items {
-            guard item.decision != .undecided || item.rating > 0 || item.savedToLibrary else {
+            guard item.decision != .undecided || item.rating > 0 || item.savedToLibrary || item.isReference else {
                 continue
             }
             snapshot[Self.key(for: item)] = Record(
                 decision: item.decision,
                 rating: item.rating,
                 savedToLibrary: item.savedToLibrary,
-                savedAssetID: item.savedAssetID
+                savedAssetID: item.savedAssetID,
+                isReference: item.isReference
             )
         }
         records = snapshot

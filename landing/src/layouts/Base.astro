@@ -10,23 +10,53 @@ interface Props {
 const { lang } = Astro.props;
 const t = useTranslations(lang);
 
-const site = Astro.site ?? new URL('https://peliculle.com');
+const site = Astro.site ?? new URL('https://peliculle.netlify.app');
 const canonical = new URL(localizePath(lang), site);
 const alternates = (Object.keys(ui) as Lang[]).map((l) => ({
   lang: l,
   href: new URL(localizePath(l), site).href,
 }));
 
-// JSON-LD : l'app + la FAQ (rich results)
-const appJsonLd = {
+// JSON-LD : identité (Person partagé entre tous mes sites — ne pas changer
+// l'@id), le site, l'app. La FAQ reste dans son propre script (rich results).
+const personId = 'https://owenlebec.fr/#person';
+const graphJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Peliculle',
-  operatingSystem: 'iOS',
-  applicationCategory: 'PhotographyApplication',
-  description: t('meta.description'),
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
-  url: canonical.href,
+  '@graph': [
+    {
+      '@type': 'Person',
+      '@id': personId,
+      name: 'Owen Le Bec',
+      url: 'https://owenlebec.fr',
+      email: 'mailto:lebec.owen@yahoo.fr',
+      sameAs: [
+        site.href,
+        'https://photo.owenlebec.fr',
+        'https://github.com/OwenLB',
+        'https://www.linkedin.com/in/owenlb/',
+      ],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': new URL('/#website', site).href,
+      url: site.href,
+      name: 'Peliculle',
+      description: t('meta.description'),
+      inLanguage: lang,
+      author: { '@id': personId },
+      publisher: { '@id': personId },
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'Peliculle',
+      operatingSystem: 'iOS',
+      applicationCategory: 'PhotographyApplication',
+      description: t('meta.description'),
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+      url: canonical.href,
+      author: { '@id': personId },
+    },
+  ],
 };
 
 const faqJsonLd = {
@@ -96,7 +126,7 @@ const faqJsonLd = {
     <meta name="twitter:description" content={t('meta.description')} />
     <meta name="twitter:image" content={new URL('/og-image.png', site).href} />
 
-    <script type="application/ld+json" set:html={JSON.stringify(appJsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(graphJsonLd)} />
     <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
   </head>
   <body>

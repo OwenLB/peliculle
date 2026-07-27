@@ -64,6 +64,13 @@ final class PhotoItem: Identifiable {
     /// Note 0–5 (F10), axe indépendant du keep/reject, façon Photo Mechanic.
     var rating: Int = 0
 
+    /// « Référence » (pick) — LA préférée d'un groupe départagé (tournoi/duel).
+    /// Toujours **gardée** : une référence implique keep, et sortir la photo de
+    /// keep (rejet, remise à non triée) efface le marquage. Axe distinct de la
+    /// note : un repère « c'est celle-là la principale » parmi les gardées.
+    /// Posée par `CullSession.resolve`/`elect`, persistée par `SessionStore`.
+    var isReference: Bool = false
+
     /// Vrai une fois la photo copiée dans la pellicule iOS (source carte) ou
     /// ajoutée à l'album de destination (source photothèque), cette session.
     /// Permet de signaler ce qui est déjà fait et d'éviter les doublons

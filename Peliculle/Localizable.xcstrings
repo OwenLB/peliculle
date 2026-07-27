@@ -56,6 +56,9 @@
         }
       }
     },
+    "%lld à venir" : {
+
+    },
     "%lld autre(s) statut(s)" : {
       "localizations" : {
         "en" : {
@@ -864,6 +867,9 @@
         }
       }
     },
+    "%lld similaires" : {
+
+    },
     "%lld sources" : {
 
     },
@@ -959,6 +965,7 @@
 
     },
     "0,5 seconde" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -969,6 +976,7 @@
       }
     },
     "1 seconde" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -979,6 +987,7 @@
       }
     },
     "2 secondes" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -987,6 +996,9 @@
           }
         }
       }
+    },
+    "À juger" : {
+
     },
     "À partir du" : {
       "localizations" : {
@@ -1086,6 +1098,9 @@
           }
         }
       }
+    },
+    "Ajoute d'un coup les %lld gardée(s) du voyage encore absentes de l'album. N'en retire jamais." : {
+
     },
     "Ajouter" : {
 
@@ -1234,6 +1249,26 @@
     },
     "Aller en haut" : {
 
+    },
+    "Analyse des photos en cours, %lld sur %lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Analyse des photos en cours, %1$lld sur %2$lld"
+          }
+        }
+      }
+    },
+    "Analyse des photos en cours… %lld/%lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Analyse des photos en cours… %1$lld/%2$lld"
+          }
+        }
+      }
     },
     "Annuler" : {
       "localizations" : {
@@ -1502,6 +1537,7 @@
       }
     },
     "Championne" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1522,6 +1558,7 @@
       }
     },
     "Choisir" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1657,6 +1694,15 @@
         }
       }
     },
+    "Départager (%lld)" : {
+
+    },
+    "Départager %lld photos similaires" : {
+
+    },
+    "Départager les similaires (%lld)" : {
+
+    },
     "Depuis le %@" : {
       "localizations" : {
         "en" : {
@@ -1668,6 +1714,7 @@
       }
     },
     "Désactivé" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1816,6 +1863,7 @@
       }
     },
     "Duel %lld / %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1846,7 +1894,11 @@
         }
       }
     },
+    "Élire" : {
+
+    },
     "Élire cette photo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1855,9 +1907,6 @@
           }
         }
       }
-    },
-    "Élire la couverture" : {
-
     },
     "Enregistrement terminé" : {
       "localizations" : {
@@ -2195,6 +2244,7 @@
       }
     },
     "Grouper les rafales" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2339,6 +2389,9 @@
         }
       }
     },
+    "Large" : {
+
+    },
     "Le Mode Voyage borne déjà l'affichage — la plage se règle dans le drawer Voyage." : {
 
     },
@@ -2416,6 +2469,7 @@
       }
     },
     "Les photos prises en rafale sont regroupées. « Élire » garde la photo affichée et rejette le reste ; « Duel » les départage." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2424,6 +2478,9 @@
           }
         }
       }
+    },
+    "Les photos qui se ressemblent sont signalées d'un badge (grille et Tri rapide) et se départagent en tournoi. La sensibilité règle la tolérance visuelle — à affiner selon vos photos. Le repérage dans la grille s'active dans les Filtres." : {
+
     },
     "Les photos seront enregistrées dans la pellicule, sans album." : {
       "localizations" : {
@@ -2564,7 +2621,6 @@
       }
     },
     "Normale" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2681,6 +2737,7 @@
 
     },
     "Ouvrez la pile pour élire la meilleure" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2700,7 +2757,7 @@
         }
       }
     },
-    "Ouvrir la pile" : {
+    "Ouvrir le tournoi automatiquement" : {
 
     },
     "Ouvrir Réglages" : {
@@ -2842,6 +2899,7 @@
       }
     },
     "Rafales" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2880,6 +2938,9 @@
           }
         }
       }
+    },
+    "Référence" : {
+
     },
     "Réglages" : {
       "localizations" : {
@@ -2944,6 +3005,9 @@
     "Remplacer" : {
 
     },
+    "Repérer les similaires" : {
+
+    },
     "Reprendre" : {
 
     },
@@ -2966,6 +3030,9 @@
           }
         }
       }
+    },
+    "Résultat" : {
+
     },
     "Retirer" : {
 
@@ -3020,6 +3087,9 @@
         }
       }
     },
+    "Sensibilité" : {
+
+    },
     "Session" : {
 
     },
@@ -3044,6 +3114,9 @@
           }
         }
       }
+    },
+    "Similaires" : {
+
     },
     "Source" : {
       "extractionState" : "stale",
@@ -3073,7 +3146,6 @@
       }
     },
     "Stricte" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3195,6 +3267,12 @@
         }
       }
     },
+    "Synchroniser l'album" : {
+
+    },
+    "Synchroniser les gardées (%lld)" : {
+
+    },
     "Taille" : {
       "localizations" : {
         "en" : {
@@ -3252,6 +3330,9 @@
         }
       }
     },
+    "Touchez pour garder/rejeter · appui long pour agrandir." : {
+
+    },
     "Touchez un voyage pour le reprendre ; balayez pour le supprimer de l'historique." : {
       "localizations" : {
         "en" : {
@@ -3281,12 +3362,6 @@
           }
         }
       }
-    },
-    "Tout garder" : {
-
-    },
-    "Tout rejeter" : {
-
     },
     "Tout se passe sur votre appareil : le tri, les aperçus et les signaux d'analyse ne quittent jamais l'iPhone." : {
       "localizations" : {

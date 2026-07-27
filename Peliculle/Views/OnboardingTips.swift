@@ -75,31 +75,3 @@ struct ZoomFullResTip: Tip {
         #Rule(Self.$hasZoomed) { $0 == true }
     }
 }
-
-/// ④ Les piles de rafales. Ancré sur la première pile affichée : pas de
-/// pile, pas de tip.
-struct BurstPileTip: Tip {
-    var title: Text { Text("Ouvrez la pile pour élire la meilleure") }
-    var message: Text? {
-        Text("Les photos prises en rafale sont regroupées. « Élire » garde la photo affichée et rejette le reste ; « Duel » les départage.")
-    }
-    var image: Image? { Image(systemName: "square.stack") }
-
-    var options: [Option] {
-        MaxDisplayCount(3)
-    }
-}
-
-/// Pose le tip ④ sur une cellule **seulement** quand elle est la première
-/// pile — `popoverTip` ne prend pas de tip optionnel, d'où le modifier.
-struct BurstTipAnchor: ViewModifier {
-    let isFirstStack: Bool
-
-    func body(content: Content) -> some View {
-        if isFirstStack {
-            content.popoverTip(BurstPileTip())
-        } else {
-            content
-        }
-    }
-}

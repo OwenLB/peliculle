@@ -100,4 +100,89 @@ enum PhotoSort: String, CaseIterable, Identifiable {
     private func isNameAscending(_ a: PhotoItem, _ b: PhotoItem) -> Bool {
         a.filename.localizedStandardCompare(b.filename) == .orderedAscending
     }
+
+    /// Tri **décoré** (transformée de Schwartz) pour les grandes listes : une
+    /// seule lecture des propriétés par photo, le tri ne compare ensuite que
+    /// des valeurs plates. Le comparateur direct (`areInOrder`, gardé comme
+    /// référence testée) relisait `captureDate`/`rating`/… à chacune des
+    /// ~n log n comparaisons — et sous `@Observable`, chaque lecture pendant
+    /// un rendu est **trackée** : sur 10 000 photos, un demi-million de
+    /// lectures verrouillées par tri. Même ordre que `areInOrder` (mêmes
+    /// critères, mêmes replis d'égalité).
+    @MainActor
+    func sorted(_ items: [PhotoItem], ascending: Bool) -> [PhotoItem] {
+        struct Keyed {
+            let item: PhotoItem
+            let captureDate: Date
+            let fileDate: Date
+            let name: String
+            let rating: Int
+            let size: Int
+            let score: Double
+        }
+        let keyed = items.map { item in
+            Keyed(
+                item: item,
+                captureDate: item.captureDate ?? .distantPast,
+                fileDate: item.fileDate ?? .distantPast,
+                name: item.filename,
+                rating: item.rating,
+                size: item.fileSize ?? 0,
+                score: item.analysis?.aestheticScore ?? -1
+            )
+        }
+        func nameAscending(_ a: Keyed, _ b: Keyed) -> Bool {
+            a.name.localizedStandardCompare(b.name) == .orderedAscending
+        }
+        // Repli d'égalité commun : date fichier croissante puis nom (le même
+        // que `PhotoSort.date.areInOrder(_:_:ascending: true)`).
+        func dateAscending(_ a: Keyed, _ b: Keyed) -> Bool {
+            if a.fileDate != b.fileDate { return a.fileDate < b.fileDate }
+            return nameAscending(a, b)
+        }
+        let inOrder: (Keyed, Keyed) -> Bool
+        switch self {
+        case .captureDate:
+            inOrder = { a, b in
+                if a.captureDate != b.captureDate {
+                    return ascending ? a.captureDate < b.captureDate : a.captureDate > b.captureDate
+                }
+                return nameAscending(a, b)
+            }
+        case .date:
+            inOrder = { a, b in
+                if a.fileDate != b.fileDate {
+                    return ascending ? a.fileDate < b.fileDate : a.fileDate > b.fileDate
+                }
+                return nameAscending(a, b)
+            }
+        case .name:
+            inOrder = { a, b in
+                a.name.localizedStandardCompare(b.name)
+                    == (ascending ? .orderedAscending : .orderedDescending)
+            }
+        case .rating:
+            inOrder = { a, b in
+                if a.rating != b.rating {
+                    return ascending ? a.rating < b.rating : a.rating > b.rating
+                }
+                return dateAscending(a, b)
+            }
+        case .size:
+            inOrder = { a, b in
+                if a.size != b.size {
+                    return ascending ? a.size < b.size : a.size > b.size
+                }
+                return dateAscending(a, b)
+            }
+        case .aesthetic:
+            inOrder = { a, b in
+                if a.score != b.score {
+                    return ascending ? a.score < b.score : a.score > b.score
+                }
+                return dateAscending(a, b)
+            }
+        }
+        return keyed.sorted(by: inOrder).map(\.item)
+    }
 }

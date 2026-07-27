@@ -9,9 +9,6 @@ import UIKit
 struct ViewerContext: Hashable, Identifiable {
     let start: PhotoItem
     let items: [PhotoItem]
-    /// Vrai quand le viewer est scopé à une **pile de rafale** (idée 3) :
-    /// active les actions Élire / Duel.
-    var isStack = false
 
     var id: PhotoItem.ID { start.id }
 }
@@ -63,10 +60,10 @@ struct GridView: View {
     @State private var showTripSettings = false
     @AppStorage("gridSort") private var sort: PhotoSort = .date
     @AppStorage("gridSortAscending") private var sortAscending = true
-    /// Idée 3 — groupement de rafales : seuil en secondes (0 = désactivé,
-    /// réglé dans ⚙️) et toggle rapide dans le menu filtres.
-    @AppStorage("burstThreshold") private var burstThreshold = 1.0
-    @AppStorage("burstGrouping") private var groupBursts = true
+    /// Repérage des similaires dans la grille (badge ≈ en place) — toggle dans
+    /// la sheet Filtres. Sensibilité partagée avec le Tri rapide (réglée ⚙️).
+    @AppStorage("similarityBadges") private var similarityBadges = true
+    @AppStorage("similaritySensitivity") private var similaritySensitivity = SimilaritySensitivity.normal
 
     @State private var isSelecting = false
     @State private var selection = Set<PhotoItem.ID>()
@@ -120,11 +117,11 @@ struct GridView: View {
     // MARK: - Dérivés du rendu (une photographie par passe)
 
     /// Dérivés coûteux du rendu — filtre + tri O(n log n), piles de rafales,
-    /// sections par jour, listes des pickers. Recalculés **une fois** par
-    /// passe de `body` (`refreshDerived`, appelé en tête) puis relus tels
-    /// quels partout : chaque dérivé était une computed property référencée
-    /// à plusieurs endroits du rendu, et chaque lecture refaisait tout le
-    /// travail — sur 10 000 photos, plusieurs tris complets par rendu.
+    /// sections par jour, listes des pickers. Recalculés seulement quand la
+    /// clé (`Inputs`) change, puis relus tels quels partout : chaque dérivé
+    /// était une computed property référencée à plusieurs endroits du rendu,
+    /// et chaque lecture refaisait tout le travail — sur 10 000 photos,
+    /// plusieurs tris complets par rendu.
     ///
     /// Classe volontairement **non observée** : le remplir pendant le rendu
     /// n'invalide rien (muter un `@State` pendant `body` est interdit, muter
@@ -132,29 +129,128 @@ struct GridView: View {
     /// (taps, boutons) lisent aussi cette photographie : elle reflète le
     /// dernier rendu, donc exactement ce que l'utilisateur voit à l'écran.
     private final class RenderDerived {
+        /// Clé du dernier calcul : tout ce qui influence les dérivés. Les
+        /// mutations de photos (décisions, notes, marquages, raffinements en
+        /// lot) passent par la session, qui bumpe `revision` — c'est le
+        /// contrat qui rend ce cache honnête. `itemCount` en ceinture de
+        /// sécurité : un remplacement du tableau `items` invalide même si un
+        /// chemin de mutation oubliait le bump.
+        struct Inputs: Equatable {
+            var revision: Int
+            var itemCount: Int
+            var filters: GridFilters
+            var sort: PhotoSort
+            var sortAscending: Bool
+            var trip: TripMode
+            var groupByDay: Bool
+            var destinationAlbumIDs: Set<String>
+        }
+
+        var inputs: Inputs?
         var filtered: [PhotoItem] = []
-        var entries: [GridEntry] = []
+        var entries: [PhotoItem] = []
         var sections: [DaySection] = []
         var availableFormats: [FormatFilter] = [.all]
         var cameras: [String] = []
         var lenses: [String] = []
         var hasGeolocated = false
+        var hasUntriaged = false
+        /// Gardées du voyage pas encore dans l'album de destination : cible du
+        /// bouton « Synchroniser » (drawer Voyage + menu ⋯ de sélection).
+        var syncableKeepers: [PhotoItem] = []
     }
 
     @State private var derived = RenderDerived()
 
-    /// Recalcule la photographie du rendu. Les lectures d'observables
-    /// (items, décisions, filtres, tri) se font **pendant** le rendu :
-    /// l'invalidation SwiftUI reste entièrement automatique.
+    /// Groupes de similaires **sur le périmètre affiché** (id → membres du
+    /// groupe), calculés par une passe Vision quand « Repérer les similaires »
+    /// est actif. Sert au badge ≈ et au tournoi qu'il ouvre. Vide sinon.
+    @State private var similarGroups: [PhotoItem.ID: [PhotoItem]] = [:]
+
+    /// Index de teinte du groupe de similaires (id → rang du groupe). Sert à
+    /// **différencier visuellement** les groupes voisins dans la grille : la
+    /// couleur du badge tourne dans `Self.similarPalette` (pas unique — les
+    /// groupes se suivant chronologiquement, un cycle suffit à les distinguer).
+    @State private var similarGroupColor: [PhotoItem.ID: Int] = [:]
+
+    /// Palette cyclique des badges de similaires : assez de teintes bien
+    /// séparées pour que deux groupes adjacents ne se confondent pas, sans
+    /// viser l'unicité (le rang du groupe est pris modulo cette liste).
+    private static let similarPalette: [Color] = [
+        .teal, .orange, .purple, .pink, .green, .indigo, .blue, .brown,
+    ]
+
+    /// Progression du repérage des similaires (`fait`, `total`) pendant la passe
+    /// Vision, pour le bandeau discret. Nil au repos.
+    @State private var similarityProgress: (done: Int, total: Int)?
+
+    /// Clé du **dernier** repérage mené à terme. `.task(id:)` se relance quand
+    /// la grille réapparaît (retour du viewer) même si rien n'a changé : on
+    /// compare cette clé pour **ne pas refaire** l'analyse à l'identique.
+    @State private var analyzedSimilarityKey: SimilarityKey?
+
+    /// Clé de recalcul des similaires : volontairement **sans** la révision de
+    /// session (une décision ne change pas la similarité visuelle) — seulement
+    /// le toggle, la sensibilité, le voyage, les filtres et le nombre d'items
+    /// (ajout/retrait de source). Évite de re-clusteriser à chaque tri.
+    private struct SimilarityKey: Equatable {
+        var enabled: Bool
+        var sensitivity: SimilaritySensitivity
+        var filters: GridFilters
+        var tripActive: Bool
+        var itemCount: Int
+    }
+    private var similarityKey: SimilarityKey {
+        SimilarityKey(
+            enabled: similarityBadges,
+            sensitivity: similaritySensitivity,
+            filters: filters,
+            tripActive: session.trip.isActive,
+            itemCount: session.items.count
+        )
+    }
+
+    /// Recalcule la photographie du rendu **si sa clé a changé**. Construire
+    /// la clé lit `session.revision`, le voyage et les filtres pendant le
+    /// rendu : l'invalidation SwiftUI reste entièrement automatique. Clé
+    /// inchangée ⇒ rendu sans aucun re-scan — refaire filtre + tri sur les
+    /// 10 000 photos de la session à chaque passe de `body` (chaque décision,
+    /// chaque lot des passes de fond, chaque cellule dont l'EXIF paresseux
+    /// arrivait — y compris pendant que le viewer est ouvert au-dessus dans
+    /// la pile de navigation) était le premier poste de lag des grandes
+    /// sessions.
     private func refreshDerived() {
+        let inputs = RenderDerived.Inputs(
+            revision: session.revision,
+            itemCount: session.items.count,
+            filters: filters,
+            sort: sort,
+            sortAscending: sortAscending,
+            trip: session.trip,
+            groupByDay: groupByDay,
+            destinationAlbumIDs: destinationAlbumIDs
+        )
+        guard derived.inputs != inputs else { return }
+        derived.inputs = inputs
         let filtered = filteredItems
         derived.filtered = filtered
-        derived.entries = entries(from: filtered)
-        derived.sections = groupByDay ? sections(from: derived.entries) : []
+        derived.entries = filtered
+        derived.sections = groupByDay ? sections(from: filtered) : []
         derived.availableFormats = FormatFilter.available(for: session.items)
         derived.cameras = Set(session.items.compactMap { $0.exif?.camera }).sorted()
         derived.lenses = Set(session.items.compactMap { $0.exif?.lens }).sorted()
         derived.hasGeolocated = session.items.contains { $0.exif?.hasCoordinate == true }
+        derived.hasUntriaged = session.items.contains {
+            session.tripMatches($0) && $0.decision == .undecided
+        }
+        // « Synchroniser » — gardées du voyage encore absentes de l'album.
+        // Additif : on ne retire jamais de l'album (voir ROADMAP, dette /
+        // à tester). Dépend de la révision, du voyage et de l'album sondé
+        // (`destinationAlbumIDs`) — tous trois dans la clé du cache, donc
+        // recalculé exactement quand il le faut, jamais par simple rendu.
+        derived.syncableKeepers = session.trip.isActive
+            ? session.keepers.filter { session.tripMatches($0) && !isSaved($0) }
+            : []
     }
 
     private func matchesFilter(_ item: PhotoItem) -> Bool {
@@ -233,8 +329,12 @@ struct GridView: View {
             pending.removeAll()
             lastFlush = .now
             guard !batch.isEmpty else { return }
-            await MainActor.run {
+            await MainActor.run { [session] in
                 for (item, value) in batch { apply(item, value) }
+                // Un lot appliqué = un bump de révision : le cache des
+                // dérivés (`RenderDerived`) se recalcule une fois par flush,
+                // jamais par photo.
+                session.noteItemsRefined()
             }
         }
         for item in items {
@@ -255,9 +355,10 @@ struct GridView: View {
     /// **sans** les filtres de la grille (le tri rapide a son propre
     /// sélecteur de périmètre).
     private var quickCullBase: [PhotoItem] {
-        session.items
-            .filter { session.tripMatches($0) }
-            .sorted { sort.areInOrder($0, $1, ascending: sortAscending) }
+        sort.sorted(
+            session.items.filter { session.tripMatches($0) },
+            ascending: sortAscending
+        )
     }
 
     /// Périmètre « Aujourd'hui » du tri rapide — partagé entre le sélecteur
@@ -270,55 +371,20 @@ struct GridView: View {
 
     /// Reste-t-il des photos non triées dans le périmètre voyage ? Le Tri
     /// rapide n'existe que pour les reprendre : tout trié ⇒ bouton masqué.
-    /// Évite le tri de `quickCullBase` (inutile pour un simple test).
-    private var hasUntriaged: Bool {
-        session.items.contains { session.tripMatches($0) && $0.decision == .undecided }
-    }
+    /// Lu depuis la photographie du rendu : un scan par recalcul, pas par
+    /// passe de `body`.
+    private var hasUntriaged: Bool { derived.hasUntriaged }
+
+    /// Gardées du voyage encore absentes de l'album (photographie du rendu) —
+    /// cible du bouton « Synchroniser », partagée par le drawer Voyage et le
+    /// menu ⋯ de sélection.
+    private var syncableKeepers: [PhotoItem] { derived.syncableKeepers }
 
     private var filteredItems: [PhotoItem] {
-        session.items
-            .filter(matchesFilter)
-            .sorted { sort.areInOrder($0, $1, ascending: sortAscending) }
+        sort.sorted(session.items.filter(matchesFilter), ascending: sortAscending)
     }
 
     // MARK: - Piles de rafales (idée 3)
-
-    /// Une case de la grille : photo isolée, ou pile de rafale repliée sur sa
-    /// couverture. `members` = la pile entière (le viewer scopé la reçoit
-    /// telle quelle), `visible` = les membres passant les filtres (cible de
-    /// la sélection).
-    private enum GridEntry: Identifiable {
-        case photo(PhotoItem)
-        case stack(cover: PhotoItem, members: [PhotoItem], visible: [PhotoItem])
-
-        var id: PhotoItem.ID {
-            switch self {
-            case .photo(let item): item.id
-            case .stack(_, let members, _): members[0].id
-            }
-        }
-    }
-
-    /// Construit les cases de la grille depuis la liste filtrée — appelé une
-    /// fois par rendu (`refreshDerived`), jamais en lecture directe.
-    private func entries(from filtered: [PhotoItem]) -> [GridEntry] {
-        guard groupBursts else { return filtered.map { .photo($0) } }
-        // Piles détectées sur la session entière : un filtre qui masque des
-        // membres ne dissout pas la pile.
-        return BurstGrouper.entries(in: filtered, among: session.items, threshold: burstThreshold)
-            .map { entry -> GridEntry in
-                switch entry {
-                case .single(let item):
-                    return .photo(item)
-                case .stack(let members, let anchor):
-                    let visible = members.filter(matchesFilter)
-                    // Couverture : la gardée si la pile est déjà départagée,
-                    // sinon la première visible dans l'ordre de tri courant.
-                    let cover = visible.first { $0.decision == .keep } ?? anchor
-                    return .stack(cover: cover, members: members, visible: visible)
-                }
-            }
-    }
 
     private var isFiltering: Bool {
         filters.isActive(tripActive: session.trip.isActive)
@@ -332,29 +398,35 @@ struct GridView: View {
 
     /// Même logique pour l'EXIF (Jalon 8) : tri par prise de vue, sections
     /// par jour ou filtre EXIF actif → il faut l'index de toute la session.
+    /// Un **voyage actif** compte aussi : c'est un filtre sur la date de
+    /// prise de vue, et depuis que l'EXIF paresseux des cellules ne re-dérive
+    /// plus la grille (cache par révision), c'est cette passe — et ses bumps
+    /// par lot — qui fait converger l'appartenance au voyage des fichiers
+    /// carte vers leur vraie date EXIF (au lieu de la date fichier).
     private var needsSessionExif: Bool {
         groupByDay || sort == .captureDate || filters.isExifFiltering
+            || session.trip.isActive
     }
 
     // MARK: - Sections par jour (idée 12)
 
     /// Une section de grille : un jour de prise de vue (nil = date inconnue,
-    /// toujours en fin), ses cases, et le lieu dominant si le GPS l'a donné.
+    /// toujours en fin), ses photos, et le lieu dominant si le GPS l'a donné.
     private struct DaySection: Identifiable {
         let day: Date?
-        let entries: [GridEntry]
+        let entries: [PhotoItem]
         let place: String?
         var id: TimeInterval { day?.timeIntervalSinceReferenceDate ?? .greatestFiniteMagnitude }
     }
 
-    /// Groupe les cases par jour de prise de vue — appelé une fois par rendu
+    /// Groupe les photos par jour de prise de vue — appelé une fois par rendu
     /// (`refreshDerived`), seulement quand le regroupement est actif.
-    private func sections(from entries: [GridEntry]) -> [DaySection] {
+    private func sections(from entries: [PhotoItem]) -> [DaySection] {
         let calendar = Calendar.current
         var days: [Date?] = []
-        var groups: [Date?: [GridEntry]] = [:]
+        var groups: [Date?: [PhotoItem]] = [:]
         for entry in entries {
-            let day = representative(of: entry).captureDate.map { calendar.startOfDay(for: $0) }
+            let day = entry.captureDate.map { calendar.startOfDay(for: $0) }
             if groups[day] == nil { days.append(day) }
             groups[day, default: []].append(entry)
         }
@@ -375,19 +447,12 @@ struct GridView: View {
             }
     }
 
-    private func representative(of entry: GridEntry) -> PhotoItem {
-        switch entry {
-        case .photo(let item): return item
-        case .stack(let cover, _, _): return cover
-        }
-    }
-
     /// Lieu le plus fréquent parmi les photos géocodées de la section
     /// (en-têtes par lieu, bonus GPS) — nil si rien n'est résolu.
-    private func dominantPlace(of entries: [GridEntry]) -> String? {
+    private func dominantPlace(of entries: [PhotoItem]) -> String? {
         var counts: [String: Int] = [:]
         for entry in entries {
-            if let place = representative(of: entry).place {
+            if let place = entry.place {
                 counts[place, default: 0] += 1
             }
         }
@@ -400,14 +465,7 @@ struct GridView: View {
     /// photographie du dernier rendu est donc exactement la bonne.
     private var displayedItems: [PhotoItem] {
         guard groupByDay else { return derived.filtered }
-        return derived.sections.flatMap { section in
-            section.entries.flatMap { entry -> [PhotoItem] in
-                switch entry {
-                case .photo(let item): return [item]
-                case .stack(_, _, let visible): return visible
-                }
-            }
-        }
+        return derived.sections.flatMap { $0.entries }
     }
 
     private var selectedItems: [PhotoItem] {
@@ -492,6 +550,7 @@ struct GridView: View {
                     statusPill
                 }
             }
+            .animation(.snappy(duration: 0.25), value: similarityProgress?.done)
             // Idée 14 — le Tri rapide en bas à gauche : action délibérée, hors
             // du pouce qui défile. Masqué en mode sélection (la bottom bar
             // prend la place).
@@ -595,7 +654,7 @@ struct GridView: View {
                 session: session,
                 items: context.items,
                 startIndex: context.items.firstIndex(of: context.start) ?? 0,
-                isStack: context.isStack
+                similarGroups: similarGroups
             )
             .navigationTransition(.zoom(sourceID: context.start.id, in: zoomNamespace))
         }
@@ -622,7 +681,7 @@ struct GridView: View {
         } message: {
             Text(deleteWarning)
         }
-        .alert("Supprimer les \(session.rejected.count) rejetées ?", isPresented: $confirmDeleteRejected) {
+        .alert("Supprimer les \(session.rejectedCount) rejetées ?", isPresented: $confirmDeleteRejected) {
             Button("Annuler", role: .cancel) {}
             Button("Supprimer", role: .destructive) {
                 Task { await deleteRejected() }
@@ -740,6 +799,13 @@ struct GridView: View {
         .task(id: membershipAlbumTitle) {
             await refreshDestinationAlbumIDs()
         }
+        // Similaires (culling assisté) : passe Vision sur le **périmètre
+        // affiché** quand le repérage est actif — badge ≈ en place, sans
+        // empiler ni réordonner. Redémarre sur changement de clé (toggle,
+        // sensibilité, filtres, voyage, set), pas à chaque décision.
+        .task(id: similarityKey) {
+            await refreshSimilarGroups()
+        }
         // Revue UX (UX5) — les filtres (dont la carte des photos) vivent
         // dans une bottom sheet ; le CTA « Voir n photos » lit `matchCount`
         // en direct. La grille reste visible derrière la détente medium.
@@ -748,7 +814,6 @@ struct GridView: View {
                 session: session,
                 sort: $sort,
                 sortAscending: $sortAscending,
-                groupBursts: $groupBursts,
                 groupByDay: $groupByDay,
                 filters: $filters,
                 availableFormats: derived.availableFormats,
@@ -791,7 +856,11 @@ struct GridView: View {
             var trips = SavedTrip.load()
             SavedTrip.record(session.trip, in: &trips)
         }) {
-            TripSettingsView(session: session)
+            TripSettingsView(
+                session: session,
+                syncableCount: syncableKeepers.count,
+                onSync: { Task { await syncTripKeepers() } }
+            )
         }
         // Idée 23 — ③ : le voyage change (activation, édition, fin) → le
         // rappel quotidien suit, permission demandée en contexte au besoin.
@@ -817,75 +886,45 @@ struct GridView: View {
     // MARK: - Cellules
 
     @ViewBuilder
-    private func cell(for entry: GridEntry) -> some View {
-        switch entry {
-        case .photo(let item):
-            let cell = Button {
-                if isSelecting {
-                    toggleSelection(item)
-                } else {
-                    viewerContext = ViewerContext(start: item, items: displayedItems)
-                }
-            } label: {
-                ThumbnailCell(
-                    item: item,
-                    isSelecting: isSelecting,
-                    isSelected: selection.contains(item.id)
-                )
-            }
-            .buttonStyle(.plain)
-            .matchedTransitionSource(id: item.id, in: zoomNamespace)
-
-            // Revue UX (UX1) — appui long = « clic droit mobile » : les
-            // micro-actions de tri sans ouvrir le viewer ni le mode
-            // sélection. Hors mode sélection uniquement (l'appui long y
-            // parasiterait le toggle des coches).
+    private func cell(for item: PhotoItem) -> some View {
+        let cell = Button {
             if isSelecting {
-                cell
+                toggleSelection(item)
             } else {
-                cell.contextMenu {
-                    photoContextMenu(for: item)
-                } preview: {
-                    PhotoContextPreview(item: item)
+                viewerContext = ViewerContext(start: item, items: displayedItems)
+            }
+        } label: {
+            ThumbnailCell(
+                item: item,
+                isSelecting: isSelecting,
+                isSelected: selection.contains(item.id)
+            )
+        }
+        .buttonStyle(.plain)
+        .matchedTransitionSource(id: item.id, in: zoomNamespace)
+        // Badge ≈ des similaires (hors sélection) : posé **en overlay** de la
+        // cellule, il capte le tap sur sa petite zone (ouvrir le tournoi) ; le
+        // reste de la vignette ouvre le viewer comme avant. Ne replie ni ne
+        // réordonne rien — l'ordre de la grille est sacré.
+        .overlay(alignment: .topLeading) {
+            if !isSelecting, let members = similarGroups[item.id] {
+                similarBadge(count: members.count, colorIndex: similarGroupColor[item.id] ?? 0) {
+                    duelContext = DuelContext(items: members)
                 }
             }
+        }
 
-        case .stack(let cover, let members, let visible):
-            // Une pile se manipule d'un bloc : tap = viewer scopé à la pile
-            // entière ; en sélection, toggle de tous les membres visibles.
-            let cell = Button {
-                if isSelecting {
-                    toggleStackSelection(visible)
-                } else {
-                    BurstPileTip().invalidate(reason: .actionPerformed)
-                    viewerContext = ViewerContext(start: cover, items: members, isStack: true)
-                }
-            } label: {
-                ThumbnailCell(
-                    item: cover,
-                    isSelecting: isSelecting,
-                    isSelected: !visible.isEmpty && visible.allSatisfy { selection.contains($0.id) }
-                )
-                .overlay(alignment: .bottomTrailing) {
-                    if !isSelecting {
-                        stackBadge(count: members.count)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-            .matchedTransitionSource(id: cover.id, in: zoomNamespace)
-            // Idée 21 — tip ④ : ancré sur la **première** pile affichée
-            // (une seule ancre : plusieurs feraient fleurir le popover).
-            .modifier(BurstTipAnchor(isFirstStack: cover.id == firstStackCoverID))
-
-            if isSelecting {
-                cell
-            } else {
-                cell.contextMenu {
-                    stackContextMenu(cover: cover, members: members)
-                } preview: {
-                    PhotoContextPreview(item: cover)
-                }
+        // Revue UX (UX1) — appui long = « clic droit mobile » : les
+        // micro-actions de tri sans ouvrir le viewer ni le mode sélection.
+        // Hors mode sélection uniquement (l'appui long y parasiterait le
+        // toggle des coches).
+        if isSelecting {
+            cell
+        } else {
+            cell.contextMenu {
+                photoContextMenu(for: item)
+            } preview: {
+                PhotoContextPreview(item: item)
             }
         }
     }
@@ -913,6 +952,16 @@ struct GridView: View {
                     session.setDecision(.undecided, for: [item])
                 } label: {
                     Label("Remettre à non triée", systemImage: "minus.circle")
+                }
+            }
+        }
+        // Similaires : chemin fiable vers le tournoi (le badge ≈ est petit).
+        if let members = similarGroups[item.id], members.count > 1 {
+            Section {
+                Button {
+                    duelContext = DuelContext(items: members)
+                } label: {
+                    Label("Départager les similaires (\(members.count))", systemImage: "rectangle.split.2x1")
                 }
             }
         }
@@ -955,49 +1004,6 @@ struct GridView: View {
         }
     }
 
-    /// Appui long sur une pile : les actions de pile (idées 3/4) accessibles
-    /// sans ouvrir le viewer scopé, plus la décision en bloc.
-    @ViewBuilder
-    private func stackContextMenu(cover: PhotoItem, members: [PhotoItem]) -> some View {
-        Section {
-            Button {
-                viewerContext = ViewerContext(start: cover, items: members, isStack: true)
-            } label: {
-                Label("Ouvrir la pile", systemImage: "square.stack")
-            }
-            Button {
-                session.elect(cover, among: members)
-            } label: {
-                Label("Élire la couverture", systemImage: "crown")
-            }
-            Button {
-                duelContext = DuelContext(items: members)
-            } label: {
-                Label("Duel", systemImage: "rectangle.split.2x1")
-            }
-        }
-        Section {
-            Button {
-                session.setDecision(.keep, for: members)
-            } label: {
-                Label("Tout garder", systemImage: "checkmark.circle")
-            }
-            Button {
-                session.setDecision(.reject, for: members)
-            } label: {
-                Label("Tout rejeter", systemImage: "xmark.circle")
-            }
-        }
-    }
-
-    /// Idée 21 — ancre du tip de rafale : la première pile de la grille.
-    private var firstStackCoverID: PhotoItem.ID? {
-        for entry in derived.entries {
-            if case .stack(let cover, _, _) = entry { return cover.id }
-        }
-        return nil
-    }
-
     /// En-tête de section épinglé : jour (« 8 juillet 2026 »), lieu dominant
     /// si le GPS l'a donné, compteur de photos à droite.
     private func sectionHeader(_ section: DaySection) -> some View {
@@ -1011,7 +1017,7 @@ struct GridView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("\(photoCount(of: section.entries))")
+            Text("\(section.entries.count)")
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(.secondary)
         }
@@ -1020,42 +1026,11 @@ struct GridView: View {
         .background(.regularMaterial)
     }
 
-    private func photoCount(of entries: [GridEntry]) -> Int {
-        entries.reduce(0) { total, entry in
-            switch entry {
-            case .photo: return total + 1
-            case .stack(_, _, let visible): return total + visible.count
-            }
-        }
-    }
-
-    private func stackBadge(count: Int) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: "square.stack")
-            Text("\(count)")
-        }
-        .font(.caption2.weight(.bold))
-        .foregroundStyle(.white)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
-        .background(.black.opacity(0.55), in: .capsule)
-        .padding(5)
-    }
-
     private func toggleSelection(_ item: PhotoItem) {
         if selection.contains(item.id) {
             selection.remove(item.id)
         } else {
             selection.insert(item.id)
-        }
-    }
-
-    private func toggleStackSelection(_ members: [PhotoItem]) {
-        let ids = members.map(\.id)
-        if ids.allSatisfy(selection.contains) {
-            for id in ids { selection.remove(id) }
-        } else {
-            selection.formUnion(ids)
         }
     }
 
@@ -1074,29 +1049,59 @@ struct GridView: View {
     private var statusPill: some View {
         // Tappable : ouvre le récap des sources (voir / retirer / ajouter) —
         // le chevron le signale en combiné, où la gestion a le plus de sens.
-        Button {
-            onChangeSource(.manage)
-        } label: {
-            HStack(spacing: 6) {
-                Text(sourceLabel)
-                    .fontWeight(.semibold)
-                Text(photoCountLabel)
-                    .foregroundStyle(.secondary)
-                // Chevron permanent : la pilule est le repère **et** l'entrée
-                // du hub « Sources » (la toolbar n'a plus de menu de sources).
-                Image(systemName: "chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+        VStack(spacing: 6) {
+            Button {
+                onChangeSource(.manage)
+            } label: {
+                HStack(spacing: 6) {
+                    Text(sourceLabel)
+                        .fontWeight(.semibold)
+                    Text(photoCountLabel)
+                        .foregroundStyle(.secondary)
+                    // Chevron permanent : la pilule est le repère **et** l'entrée
+                    // du hub « Sources » (la toolbar n'a plus de menu de sources).
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.footnote)
+                .lineLimit(1)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .glassEffect()
             }
-            .font(.footnote)
-            .lineLimit(1)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
-            .glassEffect()
+            .buttonStyle(.plain)
+
+            // Repérage des similaires : jauge **rattachée sous la pilule de
+            // source**, une barre déterminée le long de sa largeur + le compte
+            // n/N. Non bloquante, elle s'efface seule à la fin de la passe (les
+            // badges se posent en même temps derrière).
+            if let similarityProgress, similarityProgress.done < similarityProgress.total {
+                similarityProgressBar(similarityProgress)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
-        .buttonStyle(.plain)
         .padding(.horizontal, 24)
         .padding(.top, 6)
+    }
+
+    /// Barre de progression du repérage, calée sous la pilule de source : trait
+    /// fin déterminé (fraction `fait/total`) surmonté d'un libellé discret.
+    private func similarityProgressBar(_ progress: (done: Int, total: Int)) -> some View {
+        VStack(spacing: 4) {
+            Text("Analyse des photos en cours… \(progress.done)/\(progress.total)")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+            ProgressView(value: Double(progress.done), total: Double(max(1, progress.total)))
+                .progressViewStyle(.linear)
+                .tint(.blue)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .frame(maxWidth: 280)
+        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Analyse des photos en cours, \(progress.done) sur \(progress.total)")
     }
 
     private var photoCountLabel: String { photoCountText(derived.filtered.count) }
@@ -1308,16 +1313,34 @@ struct GridView: View {
                 }
                 .disabled(selectedItems.allSatisfy { $0.url == nil })
             }
+            // Synchroniser l'album du voyage — action **globale** (comme la
+            // purge des rejetées ci-dessous), indépendante de la sélection :
+            // deux mots proches (« Garder » la sélection / « Synchroniser »)
+            // ne doivent pas porter sur le même périmètre. Visible seulement
+            // en Mode Voyage. Additif — n'ajoute que les gardées absentes.
+            if session.trip.isActive {
+                Section {
+                    Button {
+                        Task { await syncTripKeepers() }
+                    } label: {
+                        Label(
+                            "Synchroniser les gardées (\(syncableKeepers.count))",
+                            systemImage: "arrow.triangle.2.circlepath"
+                        )
+                    }
+                    .disabled(syncableKeepers.isEmpty)
+                }
+            }
             Section {
                 Button(role: .destructive) {
                     confirmDeleteRejected = true
                 } label: {
                     Label(
-                        "Supprimer toutes les rejetées (\(session.rejected.count))",
+                        "Supprimer toutes les rejetées (\(session.rejectedCount))",
                         systemImage: "trash"
                     )
                 }
-                .disabled(session.rejected.isEmpty)
+                .disabled(session.rejectedCount == 0)
             }
         } label: {
             Image(systemName: "ellipsis.circle")
@@ -1458,6 +1481,117 @@ struct GridView: View {
         await refreshDestinationAlbumIDs()
         successToast = outcome.successToast
         saveMessage = outcome.errorMessage
+    }
+
+    // MARK: - Similaires (culling assisté)
+
+    /// Recalcule les groupes de similaires sur les photos **affichées**
+    /// (`derived.filtered`, hors vidéos). Empreintes Vision + regroupement
+    /// temps/distance (`SimilarityIndex`), sans réseau, cachées ⇒ instantané
+    /// aux passes suivantes. Vide la carte si le repérage est coupé ou s'il n'y
+    /// a rien à comparer. Annulable (le `.task(id:)` redémarre à chaque clé).
+    private func refreshSimilarGroups() async {
+        guard similarityBadges else {
+            similarGroups = [:]
+            similarGroupColor = [:]
+            analyzedSimilarityKey = nil
+            return
+        }
+        // Réapparition de la grille (retour du viewer) sans rien de changé : la
+        // dernière analyse vaut toujours, on ne la relance pas (empreintes déjà
+        // en carte, jauge inutile).
+        if analyzedSimilarityKey == similarityKey { return }
+        let items = derived.filtered.filter { !$0.isVideo }
+        guard items.count > 1 else {
+            similarGroups = [:]
+            similarGroupColor = [:]
+            analyzedSimilarityKey = nil
+            return
+        }
+        let descriptors = items.map {
+            SimilarityIndex.Descriptor(
+                id: $0.id,
+                backing: $0.backing,
+                // Date de **prise de vue** (EXIF, repli fichier) : c'est elle
+                // qui identifie une même photo (une copie garde sa prise de vue,
+                // pas sa date fichier).
+                date: $0.captureDate ?? .distantPast
+            )
+        }
+        let byID = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        similarityProgress = (0, descriptors.count)
+        let groups = await SimilarityIndex.shared.clusters(
+            for: descriptors,
+            maxInterval: similarityMaxInterval(for: descriptors.count),
+            maxDistance: similaritySensitivity.maxDistance,
+            onProgress: { done, total in similarityProgress = (done, total) },
+            // Publication progressive : chaque snapshot pose les badges déjà
+            // stabilisés, sans attendre la fin de la passe.
+            onPartial: { groups in applySimilarGroups(groups, byID: byID) }
+        )
+        // `.task` annulé (périmètre changé) : `clusters` rend `[]` — on n'écrase
+        // pas la carte avec du vide, le nouveau `.task` prend le relais.
+        if Task.isCancelled { similarityProgress = nil; return }
+        applySimilarGroups(groups, byID: byID)
+        analyzedSimilarityKey = similarityKey
+        similarityProgress = nil
+    }
+
+    /// Traduit des groupes d'identifiants en cartes `id → membres` **et**
+    /// `id → teinte` (rang du groupe, chronologique). Partagé par les snapshots
+    /// progressifs et le résultat final. Un groupe vide/singleton est ignoré.
+    private func applySimilarGroups(_ groups: [[PhotoItem.ID]], byID: [PhotoItem.ID: PhotoItem]) {
+        var map: [PhotoItem.ID: [PhotoItem]] = [:]
+        var colors: [PhotoItem.ID: Int] = [:]
+        // `groups` arrive dans l'ordre chronologique : le rang sert directement
+        // de teinte, si bien que deux groupes voisins tombent sur des couleurs
+        // distinctes de la palette (cyclique, pas unique).
+        var rank = 0
+        for group in groups {
+            let members = group.compactMap { byID[$0] }
+            guard members.count > 1 else { continue }
+            for member in members {
+                map[member.id] = members
+                colors[member.id] = rank
+            }
+            rank += 1
+        }
+        similarGroups = map
+        similarGroupColor = colors
+    }
+
+    /// Badge ≈ : signale que la photo a des sosies **dans le périmètre
+    /// affiché**, sans la déplacer ni la replier. Le toucher ouvre le tournoi
+    /// (`DuelView`) sur le groupe. Teinté et distinct du badge de pile (rafale)
+    /// pour ne pas les confondre.
+    private func similarBadge(count: Int, colorIndex: Int, action: @escaping () -> Void) -> some View {
+        let tint = Self.similarPalette[colorIndex % Self.similarPalette.count]
+        return Button(action: action) {
+            HStack(spacing: 3) {
+                Image(systemName: "square.on.square.dashed")
+                Text("\(count)")
+            }
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(tint.opacity(0.9), in: .capsule)
+            .padding(5)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Départager \(count) photos similaires")
+    }
+
+    /// « Synchroniser l'album du voyage » : enregistre d'un coup les gardées
+    /// du voyage pas encore rangées (fichiers carte → copie pellicule +
+    /// album, assets → ajout album). **Additif** : ne retire jamais de
+    /// l'album une photo dé-gardée (voir ROADMAP, dette / à tester). Réutilise
+    /// tout le flux d'enregistrement (garde-fou album au premier coup,
+    /// progression, toast, re-sondage de l'appartenance). Point d'entrée
+    /// unique du drawer Voyage et du menu ⋯ de sélection ; l'appelant lit la
+    /// cible via `syncableKeepers` pour le compte.
+    private func syncTripKeepers() async {
+        await save(syncableKeepers)
     }
 }
 

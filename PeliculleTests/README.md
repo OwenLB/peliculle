@@ -1,9 +1,9 @@
 # PeliculleTests
 
-Tests unitaires de la logique pure (batch H4) : `BurstGrouper`,
-`SessionStore` (clés normalisées + récupération par contenu),
-`LibraryScope`/`PhotoSource` (persistance), `TripMode.matches`,
-`PhotoSort.areInOrder`, `AlbumDestination.resolvedTitle`.
+Tests unitaires de la logique pure : `SimilarityGrouper` (regroupement des
+similaires), `SessionStore` (clés normalisées, récupération par contenu,
+référence), `CullSession.resolve`, `LibraryScope`/`PhotoSource` (persistance),
+`TripMode.matches`, `PhotoSort`, `AlbumDestination.resolvedTitle`.
 
 Compatibles avec la règle projet « pas de debug simulateur » : la logique se
 vérifie par `⌘U`, sans lancer l'app.

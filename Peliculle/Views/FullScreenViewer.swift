@@ -18,14 +18,11 @@ import TipKit
 /// Gestes de tri (voir ROADMAP) : la navigation prend l'horizontal et le
 /// pull-to-dismiss natif prend le bas ; on dédie donc le **swipe vers le haut =
 /// garder** (accélérateur, actif uniquement en mode tri), keep/reject restant
-/// disponibles sur les boutons. L'avance après décision est **instantanée**
-/// (façon Photo Mechanic) : animer la sélection du pager provoque un défilement
-/// glitché de pages en cours de chargement.
+/// disponibles sur les boutons. L'avance après décision **fait glisser** la
+/// page vers la suivante (les voisines sont préchauffées, `prefetchNeighbors`,
+/// donc plus de défilement glitché de page en cours de chargement).
 struct FullScreenViewer: View {
     let session: CullSession
-    /// Vrai quand le viewer est scopé à une **pile de rafale** (idée 3) :
-    /// affiche la rangée Élire / Duel au-dessus de la barre de tri.
-    let isStack: Bool
     /// Snapshot local : la suppression d'une photo retire sa page sans
     /// toucher à l'ordre des autres.
     @State private var items: [PhotoItem]
@@ -63,9 +60,16 @@ struct FullScreenViewer: View {
     /// la sauvegarde) du simple réglage via le menu ⋯.
     @State private var showAlbumSettings = false
     @State private var saveAfterAlbumSetup = false
-    @State private var duelContext: DuelContext?
     @State private var confirmDelete = false
     @State private var showExport = false
+    /// Groupes de similaires (id → membres), transmis par la grille : alimente
+    /// le badge ≈ cliquable du viewer et le tournoi qu'il ouvre.
+    let similarGroups: [PhotoItem.ID: [PhotoItem]]
+    /// Tournoi ouvert depuis le badge ≈ (sous-ensemble des sosies de la photo).
+    @State private var duelContext: DuelContext?
+    /// Bord d'où **entre** la nouvelle page à la transition : `.trailing` en
+    /// avançant (photo suivante venant de droite), `.leading` en reculant.
+    @State private var navDirection: Edge = .trailing
 
     @AppStorage("cullModeEnabled") private var cullMode = false
     @AppStorage("ratingRowVisible") private var showRatingRow = false
@@ -77,14 +81,26 @@ struct FullScreenViewer: View {
     /// récap en notification (via `SaveFlow`).
     @Environment(\.scenePhase) private var scenePhase
 
-    init(session: CullSession, items: [PhotoItem], startIndex: Int, isStack: Bool = false) {
+    init(
+        session: CullSession,
+        items: [PhotoItem],
+        startIndex: Int,
+        similarGroups: [PhotoItem.ID: [PhotoItem]] = [:]
+    ) {
         self.session = session
-        self.isStack = isStack
         self._items = State(initialValue: items)
         self._index = State(initialValue: startIndex)
+        self.similarGroups = similarGroups
     }
 
     private var currentItem: PhotoItem { items[index] }
+
+    /// Sosies de la photo courante (≥ 2 pour être un vrai groupe), pour le
+    /// badge ≈ et le tournoi.
+    private var currentSimilars: [PhotoItem]? {
+        guard let members = similarGroups[currentItem.id], members.count > 1 else { return nil }
+        return members
+    }
 
     /// Jalon 10 / H5 — décidé **par photo** : un asset photothèque
     /// « s'enregistre » en l'ajoutant à l'album (rien à copier ni exporter,
@@ -99,6 +115,7 @@ struct FullScreenViewer: View {
     /// capsules dans la capsule sur toute la largeur — le détail vit dans la
     /// fiche ⓘ et les contrôles.
     private enum StatusBadgeKind: Hashable {
+        case reference
         case decision
         case saved
         case rating
@@ -106,7 +123,12 @@ struct FullScreenViewer: View {
 
     private var activeBadges: [StatusBadgeKind] {
         var badges: [StatusBadgeKind] = []
-        if currentItem.decision != .undecided { badges.append(.decision) }
+        // La référence remplace la coche « gardée » (elle l'implique).
+        if currentItem.isReference {
+            badges.append(.reference)
+        } else if currentItem.decision != .undecided {
+            badges.append(.decision)
+        }
         if currentItem.savedToLibrary { badges.append(.saved) }
         if currentItem.rating > 0 { badges.append(.rating) }
         return badges
@@ -117,62 +139,20 @@ struct FullScreenViewer: View {
     private var showsChrome: Bool { !isZoomed && !hudHidden }
 
     var body: some View {
-        TabView(selection: $index) {
-            ForEach(Array(items.enumerated()), id: \.element.id) { offset, item in
-                PhotoDetailImage(
-                    item: item,
-                    // Hors plein écran, la photo devient une carte aux coins
-                    // arrondis ; en immersif elle repart bord à bord. **Toutes**
-                    // les pages sont encadrées, pas seulement la courante :
-                    // conditionner au `index` re-layoutait les deux pages au
-                    // snap et cassait l'animation de défilement (impression de
-                    // décharge/recharge). Le blocage « entre deux » du pager est
-                    // traité dans `FramedPhoto` (taille externe de page stable,
-                    // le ratio chargé ne redimensionne que la carte intérieure).
-                    // Lié à `hudHidden`, pas au zoom.
-                    framed: !hudHidden,
-                    cornerRadius: 18,
-                    // La pilule d'en-tête flotte sur la zone photo : la carte
-                    // se centre sous elle tant qu'elle y tient, et ne passe
-                    // derrière que pour gagner de la hauteur (portrait).
-                    topInset: showsChrome ? headerHeight : 0,
-                    onZoomChange: { zoomed in
-                        // Idée 21 — tip ③ : éligible après le premier zoom
-                        // manuel ; un zoom suivant vaut geste accompli.
-                        if zoomed {
-                            if ZoomFullResTip.hasZoomed {
-                                ZoomFullResTip().invalidate(reason: .actionPerformed)
-                            } else {
-                                ZoomFullResTip.hasZoomed = true
-                            }
-                        }
-                        isZoomed = zoomed
-                    },
-                    onSingleTap: { hudHidden.toggle() },
-                    onSwipeUp: {
-                        if cullMode {
-                            // Idée 21 — tip ① : le geste est acquis.
-                            SwipeKeepTip().invalidate(reason: .actionPerformed)
-                            keepAndAdvance(item)
-                        }
-                    }
-                )
-                // Chaque page photo ignore la safe area individuellement :
-                // sans ça, les pages recyclées par le pager héritent parfois
-                // d'un inset haut fantôme et la photo apparaît décalée vers le
-                // bas. Bord à bord en immersif seulement ; en mode carte,
-                // **chaque** page respecte la safe area et l'inset des
-                // contrôles du bas (une safe area qui bascule au changement
-                // d'`index` re-layoutait les pages au snap et cassait le
-                // défilement). Une page vidéo, elle, respecte toujours la safe
-                // area — la vue du lecteur, ajustée au format du clip par
-                // `FramedPhoto`, garde ainsi la barre AVKit au-dessus des
-                // contrôles du viewer, même hors chrome.
-                .ignoresSafeArea(edges: (item.isVideo || !hudHidden) ? [] : .all)
-                .tag(offset)
-            }
+        // Page **unique** + transition de poussée directionnelle : le swipe
+        // horizontal (directionnel, dans `ZoomableScrollView`) et l'avance après
+        // décision passent par les **mêmes** fonctions `advance()`/`retreat()`,
+        // donc la **même animation** (le geste natif du `TabView` « remplaçait »
+        // la photo au lieu de la faire glisser). Swipes directionnels exprès :
+        // un `DragGesture` SwiftUI bloquait le pull-to-dismiss vertical. Une
+        // seule page rendue : mémoire minimale, plus de fenêtre à gérer ; la
+        // voisine est déjà décodée (`prefetchNeighbors` + cache synchrone) donc
+        // la poussée glisse sur une vraie image.
+        ZStack {
+            photoPage(for: currentItem)
+                .id(currentItem.id)
+                .transition(.push(from: navDirection))
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
         // Fond **adaptatif** : blanc en apparence claire, noir en sombre — il
         // suit le réglage de l'iPhone (comme partout dans l'app). Il déborde
         // seul de la safe area (comportement par défaut de `background(_:)`) ;
@@ -279,6 +259,20 @@ struct FullScreenViewer: View {
         .toolbar(showsChrome ? .visible : .hidden, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
+            // Badge ≈ des similaires : n'apparaît que si la photo courante a des
+            // sosies dans le périmètre. Le toucher ouvre le tournoi
+            // (`DuelView`) sur le sous-ensemble, comme depuis la grille.
+            ToolbarItem(placement: .topBarLeading) {
+                if let similars = currentSimilars {
+                    Button {
+                        duelContext = DuelContext(items: similars)
+                    } label: {
+                        Label("\(similars.count)", systemImage: "square.on.square.dashed")
+                    }
+                    .tint(.teal)
+                    .accessibilityLabel("Départager \(similars.count) photos similaires")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Annuler la dernière action", systemImage: "arrow.uturn.backward") {
                     session.undo()
@@ -337,15 +331,15 @@ struct FullScreenViewer: View {
             // Texte partagé avec la grille (`DeleteFlow`), décidé par photo.
             Text(DeleteFlow.confirmationMessage(for: currentItem))
         }
+        // Tournoi des sosies ouvert depuis le badge ≈ : mêmes règles que
+        // depuis la grille (garde la championne, rejette les autres).
+        .fullScreenCover(item: $duelContext) { context in
+            DuelView(session: session, contenders: context.items) { _ in
+                duelContext = nil
+            }
+        }
         .sheet(isPresented: $showExport) {
             DocumentExporter(urls: [currentItem.url].compactMap { $0 }) { showExport = false }
-        }
-        .fullScreenCover(item: $duelContext) { context in
-            DuelView(session: session, contenders: context.items) { applied in
-                duelContext = nil
-                // Tournoi appliqué : la pile est départagée, retour à la grille.
-                if applied { dismiss() }
-            }
         }
         .sheet(isPresented: $showAlbumSettings, onDismiss: { saveAfterAlbumSetup = false }) {
             AlbumSettingsView(
@@ -369,6 +363,12 @@ struct FullScreenViewer: View {
         // jamais été affichée (ouverture + swipes) → le viewer déclenche
         // aussi analyse et index EXIF de la photo courante (coût nul si déjà
         // en cache), puis résout le lieu pour la fiche (bonus GPS).
+        // Préchauffe les pages voisines dès l'ouverture et à chaque changement
+        // de page : le swipe (et l'avance après décision) glisse alors sur une
+        // image déjà décodée.
+        .onChange(of: index, initial: true) {
+            prefetchNeighbors()
+        }
         .task(id: currentItem.id) {
             // Idée 18 — un clip n'a ni signaux Vision ni EXIF image ; seule
             // sa durée est chargée (pour la fiche et les badges).
@@ -400,6 +400,53 @@ struct FullScreenViewer: View {
         }
         // Revue UX (UX4), même politique que la grille : succès en toast.
         .successToast(message: $successToast)
+    }
+
+    /// La page courante (photo ou vidéo). Extraite pour que `body` reste lisible
+    /// et que la transition/`id` s'appliquent proprement à un sous-arbre unique.
+    private func photoPage(for item: PhotoItem) -> some View {
+        PhotoDetailImage(
+            item: item,
+            // Hors immersif, la photo devient une carte aux coins arrondis ; en
+            // immersif elle repart bord à bord. Lié à `hudHidden`, pas au zoom.
+            framed: !hudHidden,
+            cornerRadius: 18,
+            // La pilule d'en-tête flotte sur la zone photo : la carte se centre
+            // sous elle tant qu'elle y tient, et ne passe derrière que pour
+            // gagner de la hauteur (portrait).
+            topInset: showsChrome ? headerHeight : 0,
+            onZoomChange: { zoomed in
+                // Idée 21 — tip ③ : éligible après le premier zoom manuel ; un
+                // zoom suivant vaut geste accompli.
+                if zoomed {
+                    if ZoomFullResTip.hasZoomed {
+                        ZoomFullResTip().invalidate(reason: .actionPerformed)
+                    } else {
+                        ZoomFullResTip.hasZoomed = true
+                    }
+                }
+                isZoomed = zoomed
+            },
+            onSingleTap: { hudHidden.toggle() },
+            onSwipeUp: {
+                if cullMode {
+                    // Idée 21 — tip ① : le geste est acquis.
+                    SwipeKeepTip().invalidate(reason: .actionPerformed)
+                    keepAndAdvance(item)
+                }
+            },
+            // Navigation horizontale : mêmes `advance()`/`retreat()` que les
+            // boutons de tri (même transition glissée).
+            onSwipeLeft: { advance() },
+            onSwipeRight: { retreat() },
+            // Liseré de décision qui épouse la carte photo (`DecisionFlashBorder`).
+            flash: flashDecision,
+            flashID: flashCount
+        )
+        // Bord à bord en immersif (et photo) ; en mode carte on respecte la safe
+        // area et l'inset des contrôles. Une vidéo respecte toujours la safe
+        // area (barre AVKit au-dessus des contrôles).
+        .ignoresSafeArea(edges: (item.isVideo || !hudHidden) ? [] : .all)
     }
 
     /// Capsule glass sous la barre : nom du fichier (tronqué au milieu pour
@@ -452,6 +499,8 @@ struct FullScreenViewer: View {
     @ViewBuilder
     private func badgeView(_ badge: StatusBadgeKind) -> some View {
         switch badge {
+        case .reference:
+            ReferenceBadge(font: .footnote)
         case .decision:
             DecisionBadge(decision: currentItem.decision, font: .footnote)
         case .saved:
@@ -569,21 +618,16 @@ struct FullScreenViewer: View {
     // MARK: - Contrôles bas (mode tri)
 
     /// Revue UX (UX3) — le filmstrip s'efface quand il n'apporte rien (une
-    /// seule page) et **cède la place à la rangée Élire/Duel** sur les piles
-    /// quand la hauteur est comptée (paysage iPhone) : trois rangées de
-    /// contrôles + la bande engloutiraient la photo, qui reste l'écran.
+    /// seule page).
     private var showsFilmstrip: Bool {
-        guard items.count > 1 else { return false }
-        if isStack && cullMode && verticalSizeClass == .compact { return false }
-        return true
+        items.count > 1
     }
 
-    /// Contrôles du mode tri (barre Garder/Rejeter, rangée de pile, note).
-    /// L'entrée « Trier » du viewer épuré, elle, vit dans `sortEntryRow`,
-    /// fondue à la ligne du filmstrip.
+    /// Contrôles du mode tri (barre Garder/Rejeter, note). L'entrée « Trier »
+    /// du viewer épuré, elle, vit dans `sortEntryRow`, fondue à la ligne du
+    /// filmstrip.
     private var bottomControls: some View {
         VStack(spacing: 12) {
-            if isStack { stackRow }
             if showRatingRow { starRow }
             cullBar
                 // Idée 21 — tip ① : ancré sur la barre de tri, la surface
@@ -635,41 +679,6 @@ struct FullScreenViewer: View {
         .accessibilityLabel("Trier")
     }
 
-    /// Actions de pile (idées 3/4), sur leur propre rangée pour ne jamais
-    /// élargir la barre de tri : Élire = garder la photo affichée et rejeter
-    /// le reste de la pile (un seul ↩︎) ; Duel = tournoi sur la pile.
-    private var stackRow: some View {
-        // Retour UX3 — pas de GlassEffectContainer : à 10 pt d'écart il fait
-        // fusionner les verres voisins, et le mélange verre sombre + verres
-        // colorés délavait la teinte en gris. Chaque bouton rend son verre
-        // seul, comme la pastille « Trier » (la référence de rendu).
-        HStack(spacing: 10) {
-            Button {
-                session.elect(currentItem, among: items)
-                hapticTrigger += 1
-                dismiss()
-            } label: {
-                Label("Élire cette photo", systemImage: "crown.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(.glassProminent)
-            .tint(.yellow)
-
-            Button {
-                duelContext = DuelContext(items: items)
-            } label: {
-                Label("Duel", systemImage: "rectangle.split.2x1")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(.glass)
-        }
-    }
-
     private var starRow: some View {
         StarRatingView(rating: currentItem.rating) { newRating in
             session.setRating(newRating, for: [currentItem])
@@ -690,8 +699,9 @@ struct FullScreenViewer: View {
     /// droite**, du même côté que la pastille « Trier » qui ouvre le mode :
     /// ouvrir et refermer se font sous le même pouce.
     private var cullBar: some View {
-        // Retour UX3 — même raison que `stackRow` : sans container, chaque
-        // verre garde sa teinte pleine au lieu de se fondre en gris.
+        // Retour UX3 — pas de GlassEffectContainer : à faible écart il fait
+        // fusionner les verres voisins, et le mélange verre sombre + verres
+        // colorés délave la teinte en gris. Chaque bouton rend son verre seul.
         HStack(spacing: 10) {
             roundButton(
                 symbol: showRatingRow ? "star.fill" : "star",
@@ -759,6 +769,14 @@ struct FullScreenViewer: View {
         // styles à verre — valeurs calées sur l'encombrement des voisins.
         .padding(.vertical, 14)
         .padding(.horizontal, 18)
+        // Revue UX (UX2) — toute la pastille est tappable, pas seulement le
+        // glyphe : avec `.buttonStyle(.plain)` et le verre posé en fond (donc
+        // hors du contenu du bouton), SwiftUI ne teste que les pixels opaques
+        // du label. Sans cette forme, le rembourrage et la largeur mini
+        // restaient morts au toucher — la cible réelle tombait bien sous les
+        // 52 pt visés, d'où des boutons « durs à cliquer ». La capsule épouse
+        // le verre de fond.
+        .contentShape(.capsule)
 
         // Retour UX3 — le verre en **fond** du bouton, pas en style de
         // bouton : le libellé n'appartient alors pas au contenu du verre,
@@ -821,11 +839,41 @@ struct FullScreenViewer: View {
         flashCount += 1
     }
 
-    /// Avance **sans animation** : animer la sélection du `TabView` déclenche
-    /// un défilement visuel de pages en cours de chargement (glitch connu).
+    /// Animation de changement de page, **partagée** par le swipe et les
+    /// boutons de tri : courte et décélérée pour coller au défilement natif
+    /// (l'ancienne, plus longue, « traînait »).
+    private static let pageAnimation: Animation = .easeOut(duration: 0.2)
+
+    /// Avance d'une photo en **faisant glisser** la page vers la gauche (la
+    /// suivante entre par la droite). Point d'entrée unique de l'avance : swipe
+    /// **et** boutons/geste de tri le partagent, donc une seule animation.
     private func advance() {
-        if index < items.count - 1 {
-            index += 1
+        guard index < items.count - 1 else { return }
+        navDirection = .trailing
+        withAnimation(Self.pageAnimation) { index += 1 }
+    }
+
+    /// Recule d'une photo (la précédente entre par la gauche). Symétrique
+    /// d'`advance()`, pour le swipe vers la droite.
+    private func retreat() {
+        guard index > 0 else { return }
+        navDirection = .leading
+        withAnimation(Self.pageAnimation) { index -= 1 }
+    }
+
+    /// Préchauffe l'aperçu des pages **voisines** (biais avant : en tri on
+    /// avance) pour que swipe et avance après décision fassent glisser une
+    /// vraie image, pas un spinner qui « remplace » la photo. Résultats mis en
+    /// cache (`ImageCache`) : la page voisine, quand on l'atteint, s'affiche
+    /// sans temps de décodage. Vidéos exclues (le lecteur se monte à l'écran).
+    private func prefetchNeighbors() {
+        let lower = max(0, index - 1)
+        let upper = min(items.count - 1, index + 3)
+        guard lower <= upper else { return }
+        for offset in lower...upper where offset != index {
+            let neighbor = items[offset]
+            guard !neighbor.isVideo else { continue }
+            Task { _ = await ThumbnailLoader.load(item: neighbor, maxPixel: PhotoDetailImage.previewPixels) }
         }
     }
 

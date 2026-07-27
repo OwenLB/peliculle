@@ -31,8 +31,8 @@ Quand on branche une carte SD d'appareil photo sur un iPhone USB-C, iOS n'offre 
 
 - Import zéro : lecture directe depuis une carte SD via `security-scoped bookmarks`, ou depuis la photothèque iOS (PHAsset, albums, périodes)
 - Tri par gestes : swipe garder / rejeter / plus tard, avec retour haptique
-- Piles de rafales détectées automatiquement (chaînage temporel, `BurstGrouper`)
-- Duel A/B en tournoi avec zoom synchronisé sur les deux photos (un seul pincement, la même transformation appliquée aux deux panneaux)
+- Photos similaires détectées à la vue (empreintes Vision on-device, `SimilarityIndex`) : signalées d'un badge, départagées en tournoi
+- Duel A/B en tournoi avec zoom synchronisé sur les deux photos (un seul pincement, la même transformation appliquée aux deux panneaux) — garder plusieurs photos et élire une **référence**
 - Score esthétique calculé sur l'appareil (Vision), jamais dans le cloud
 - Mode Voyage, lecture des vidéos de la carte (AVFoundation)
 - Suppression confirmée des rejets, journal d'annulation où chaque geste ne fait qu'une entrée
@@ -120,7 +120,7 @@ D'autres schémas (annulation coopérative des décodages) sont disponibles dans
 
 - **Annulation coopérative des décodages** — chaque chargement hérite de l'annulation du `.task` SwiftUI de sa cellule : au scroll rapide, les décodages des cellules sorties de l'écran s'arrêtent au lieu de tourner jusqu'au bout. Une version antérieure en `Task.detached` laissait des centaines de décodages hors écran voler CPU et batterie aux cellules visibles.
 - **Concurrence stricte de bout en bout** — `VisionAnalyzer` et `ExifIndexer` sont des acteurs mutualisés avec déduplication des requêtes en vol, calcul hors acteur en priorité basse, et `allowNetwork: false` pour les passes de fond (analyser 10 000 photos ne doit jamais déclencher 10 000 téléchargements iCloud). À l'inverse, `ImageCache` reste une simple classe `@unchecked Sendable` : `NSCache` est déjà thread-safe, un acteur n'aurait ajouté qu'un saut de contexte par vignette.
-- **Le tri comme machine à gestes** — swipe garder / rejeter / plus tard avec retour haptique, piles de rafales détectées par chaînage temporel (`BurstGrouper`, testé unitairement), duel A/B en tournoi avec zoom synchronisé sur les deux photos.
+- **Le tri comme machine à gestes** — swipe garder / rejeter / plus tard avec retour haptique, photos similaires détectées par empreintes Vision on-device (`SimilarityIndex`, groupeur testé unitairement), duel A/B en tournoi avec zoom synchronisé sur les deux photos.
 
 ## Cloner et lancer en local
 
@@ -146,11 +146,11 @@ npm run dev
 
 ```
 Peliculle/
-  Models/        → PhotoItem, CullSession, BurstGrouper, filtres, TripMode, ...
+  Models/        → PhotoItem, CullSession, Similarity, filtres, TripMode, ...
   Services/      → ExifIndexer, VisionAnalyzer, ThumbnailLoader, FullResLoader,
                     ImageCache, PhotoSaver, FolderScanner, SessionStore, ...
   Views/         → GridView, FullScreenViewer, QuickCullView, DuelView, ...
-PeliculleTests/   → tests unitaires (BurstGrouper, PhotoSort, SessionStore, TripMode, ...)
+PeliculleTests/   → tests unitaires (SimilarityGrouper, PhotoSort, SessionStore, TripMode, ...)
 landing/          → site vitrine Astro séparé (peliculle.netlify.app)
 content/          → sources des études de cas (FR/EN) reprises sur owenlebec.fr
 ```
