@@ -27,10 +27,6 @@ struct PhotoDetailImage: View {
     /// photo plein écran, autant lui servir le vrai piqué.
     var onSingleTap: () -> Void
     var onSwipeUp: () -> Void
-    /// Navigation horizontale (swipe directionnel) : gauche = suivante, droite
-    /// = précédente. Voir `ZoomableImageView`.
-    var onSwipeLeft: () -> Void = {}
-    var onSwipeRight: () -> Void = {}
     /// Idée 13 — décision en cours de confirmation **sur cette page** (nil
     /// ailleurs) : le liseré teinté est dessiné **autour de la carte photo**,
     /// pas de l'écran, en s'insérant dans le cadre. `flashID` change à chaque
@@ -50,8 +46,8 @@ struct PhotoDetailImage: View {
     static let previewPixels = 2048
 
     var body: some View {
-        if item.isVideo, let url = item.url {
-            VideoDetailPage(url: url)
+        if item.isVideo {
+            VideoDetailPage(backing: item.backing)
                 // Même traitement que les photos : la vue du lecteur épouse le
                 // format **exact** du clip — plus aucun letterbox interne (les
                 // bandes noires AVKit, choquantes en mode clair), les contrôles
@@ -69,7 +65,7 @@ struct PhotoDetailImage: View {
                 ))
                 .task(id: item.id) {
                     if item.videoAspect == nil {
-                        item.videoAspect = await VideoInfo.aspectRatio(of: url)
+                        item.videoAspect = await VideoInfo.aspectRatio(of: item.backing)
                     }
                 }
         } else {
@@ -111,9 +107,7 @@ struct PhotoDetailImage: View {
                     requestFullResolution()
                     onSingleTap()
                 },
-                onSwipeUp: onSwipeUp,
-                onSwipeLeft: onSwipeLeft,
-                onSwipeRight: onSwipeRight
+                onSwipeUp: onSwipeUp
             )
 
             if displayImage == nil {
@@ -190,12 +184,12 @@ struct PhotoDetailImage: View {
 /// arrondit ses coins. Sans image encore chargée (`aspect` nil) ou en plein
 /// écran (`framed` faux), la photo reste bord à bord comme avant.
 ///
-/// Deux invariants, tous deux nécessaires pour ne pas bloquer le snap du
-/// pager « entre deux » pendant qu'une page voisine charge en plein swipe :
+/// Deux invariants, tous deux nécessaires pour ne pas perturber le pager
+/// pendant qu'une page voisine charge en plein geste :
 /// - **taille externe stable** : le `GeometryReader` occupe toujours tout
-///   l'espace proposé, la page du `TabView` ne change jamais de taille ;
+///   l'espace proposé, la page ne change jamais de taille sous le pager ;
 /// - **structure stable** : pas de branche `if` autour du contenu — un
-///   changement de branche (ratio qui arrive, bascule du cadre) recréait le
+///   changement de branche (ratio qui arrive, bascule du cadre) recréerait le
 ///   sous-arbre, donc la `ZoomableImageView` UIKit, en plein défilement.
 ///   Seules des **valeurs** changent (taille de carte, rayon d'arrondi).
 private struct FramedPhoto: ViewModifier {
@@ -248,10 +242,10 @@ private struct FramedPhoto: ViewModifier {
 /// **pas d'autoplay** (on branche une carte pleine de clips, pas un feed),
 /// son suivant le dernier choix muet/son de la session (`VideoAudio`, coupé
 /// au premier clip). Le lecteur est libéré dès que la page quitte l'écran —
-/// le pager recycle ses pages, dix clips ne doivent jamais garder dix
-/// pipelines AVPlayer ouverts.
+/// le pager ne garde qu'un voisinage étroit de pages vivantes, dix clips ne
+/// doivent jamais laisser dix pipelines AVPlayer ouverts.
 private struct VideoDetailPage: View {
-    let url: URL
+    let backing: PhotoBacking
 
     @State private var player: AVPlayer?
     /// KVO sur `isMuted` : chaque bascule du bouton muet AVKit met à jour la
@@ -264,18 +258,28 @@ private struct VideoDetailPage: View {
             Color(.systemBackground)
             if let player {
                 NativeVideoPlayer(player: player)
+            } else {
+                // Le lecteur d'un asset se construit en asynchrone (PhotoKit
+                // le prépare, et le télécharge s'il dort dans iCloud) : la
+                // page ne doit pas rester vide en attendant.
+                ProgressView()
+                    .controlSize(.large)
             }
         }
-        .onAppear {
-            let player = AVPlayer(url: url)
-            player.isMuted = !VideoAudio.soundOn
+        // En `.task` et non plus `.onAppear` : monter un lecteur depuis un
+        // asset est asynchrone. L'annulation vient avec (page quittée avant
+        // que PhotoKit ait répondu = travail abandonné).
+        .task(id: backing) {
+            guard player == nil, let loaded = await VideoInfo.player(for: backing) else { return }
+            guard !Task.isCancelled else { return }
+            loaded.isMuted = !VideoAudio.soundOn
             // Observation posée **après** le réglage initial : elle ne
             // signale que les bascules de l'utilisateur.
-            muteObservation = player.observe(\.isMuted, options: [.new]) { _, change in
+            muteObservation = loaded.observe(\.isMuted, options: [.new]) { _, change in
                 guard let isMuted = change.newValue else { return }
                 Task { @MainActor in VideoAudio.muteChanged(isMuted: isMuted) }
             }
-            self.player = player
+            player = loaded
         }
         .onDisappear {
             muteObservation = nil

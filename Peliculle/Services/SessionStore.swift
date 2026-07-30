@@ -54,9 +54,6 @@ final class SessionStore {
     private let sourceDescription: String
     private let fileURL: URL
     private var records: [String: Record]
-    /// Vrai pour une source dossier : seules les sessions de dossier peuvent
-    /// se récupérer par contenu (les clés d'asset sont stables d'office).
-    private let isFolderSource: Bool
 
     /// Traces pour le diagnostic de session (menu ⚙️ de la grille).
     let identity: String
@@ -222,7 +219,6 @@ final class SessionStore {
 
         self.sourceDescription = sourceDescription
         self.identity = identity
-        self.isFolderSource = isFolderSource
         self.fileURL = fileURL
         self.records = records
         self.album = album
@@ -350,7 +346,34 @@ final class SessionStore {
         self.album = album
         self.albumConfirmed = albumConfirmed
         self.trip = trip
+        writeToDisk()
+    }
 
+    /// Insère/remplace l'enregistrement d'**un seul** asset, sans toucher au
+    /// reste du store — contrairement à `save`, qui remplace tout
+    /// l'instantané à partir d'une liste complète d'items. Sert à recopier la
+    /// décision d'une photo carte tout juste enregistrée sur l'identité
+    /// photothèque de la copie créée (`item.savedAssetID`), pour qu'un futur
+    /// passage sur la photothèque **seule** (carte débranchée) la retrouve
+    /// déjà triée au lieu de « non triée » (voir `CullSession.mirrorToLibraryIfNeeded`,
+    /// ROADMAP « Dette connue »). `savedToLibrary` vaut toujours vrai : cette
+    /// copie **est**, par construction, déjà dans la photothèque.
+    func upsertRecord(assetLocalIdentifier id: String, decision: CullDecision, rating: Int, isReference: Bool) {
+        records[Self.assetKeyPrefix + id] = Record(
+            decision: decision,
+            rating: rating,
+            savedToLibrary: true,
+            savedAssetID: nil,
+            isReference: isReference
+        )
+        writeToDisk()
+    }
+
+    /// Écrit l'état courant (`records`/`album`/`albumConfirmed`/`trip`) sur
+    /// disque via la file série ; supprime le fichier si tout est redevenu
+    /// vierge. Partagé par `save` (instantané complet) et `upsertRecord`
+    /// (une seule clé).
+    private func writeToDisk() {
         let payload = Payload(
             version: 3,
             folderPath: sourceDescription,
@@ -359,9 +382,9 @@ final class SessionStore {
             albumConfirmed: albumConfirmed,
             trip: trip,
             identity: identity,
-            records: snapshot
+            records: records
         )
-        let isPristine = snapshot.isEmpty && album == AlbumDestination()
+        let isPristine = records.isEmpty && album == AlbumDestination()
             && !albumConfirmed && trip == TripMode()
         let fileURL = self.fileURL
         writeQueue.async { [weak self] in

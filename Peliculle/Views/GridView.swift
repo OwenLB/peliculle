@@ -26,8 +26,6 @@ struct ViewerContext: Hashable, Identifiable {
 /// de la photothèque, export fichiers réservé à la carte).
 struct GridView: View {
     let session: CullSession
-    var recentAlbums: [RecentAlbum] = []
-    var recentFolders: [RecentFolder] = []
     var onChangeSource: (SourceRequest) -> Void
 
     /// Contexte d'ouverture du viewer. Le snapshot des items voyage **dans**
@@ -167,18 +165,18 @@ struct GridView: View {
     /// est actif. Sert au badge ≈ et au tournoi qu'il ouvre. Vide sinon.
     @State private var similarGroups: [PhotoItem.ID: [PhotoItem]] = [:]
 
-    /// Index de teinte du groupe de similaires (id → rang du groupe). Sert à
-    /// **différencier visuellement** les groupes voisins dans la grille : la
-    /// couleur du badge tourne dans `Self.similarPalette` (pas unique — les
-    /// groupes se suivant chronologiquement, un cycle suffit à les distinguer).
-    @State private var similarGroupColor: [PhotoItem.ID: Int] = [:]
-
-    /// Palette cyclique des badges de similaires : assez de teintes bien
-    /// séparées pour que deux groupes adjacents ne se confondent pas, sans
-    /// viser l'unicité (le rang du groupe est pris modulo cette liste).
-    private static let similarPalette: [Color] = [
-        .teal, .orange, .purple, .pink, .green, .indigo, .blue, .brown,
-    ]
+    /// Rang **chronologique** du groupe de similaires (id → rang, 0-based).
+    /// Porte deux choses à la fois :
+    /// - le **numéro de lot** affiché sur le badge (`rang + 1`) — « 2.10 » se
+    ///   lit « lot 2, dix photos » : on repère du premier coup d'œil que deux
+    ///   vignettes éloignées appartiennent au même lot, ce qu'une couleur
+    ///   cyclique ne peut pas garantir ;
+    /// - la **teinte** du badge, prise modulo `Self.similarPalette`.
+    ///
+    /// Numérotation valable **pour le périmètre affiché** : changer de filtre
+    /// relance le repérage et renumérote. C'est un repère de lecture de la
+    /// grille en cours, pas un identifiant persistant.
+    @State private var similarGroupRank: [PhotoItem.ID: Int] = [:]
 
     /// Progression du repérage des similaires (`fait`, `total`) pendant la passe
     /// Vision, pour le bandeau discret. Nil au repos.
@@ -654,7 +652,8 @@ struct GridView: View {
                 session: session,
                 items: context.items,
                 startIndex: context.items.firstIndex(of: context.start) ?? 0,
-                similarGroups: similarGroups
+                similarGroups: similarGroups,
+                similarRanks: similarGroupRank
             )
             .navigationTransition(.zoom(sourceID: context.start.id, in: zoomNamespace))
         }
@@ -903,12 +902,14 @@ struct GridView: View {
         .buttonStyle(.plain)
         .matchedTransitionSource(id: item.id, in: zoomNamespace)
         // Badge ≈ des similaires (hors sélection) : posé **en overlay** de la
-        // cellule, il capte le tap sur sa petite zone (ouvrir le tournoi) ; le
-        // reste de la vignette ouvre le viewer comme avant. Ne replie ni ne
-        // réordonne rien — l'ordre de la grille est sacré.
+        // cellule — donc hors du bouton — pour capter le tap sur sa petite
+        // zone (ouvrir le tournoi) ; le reste de la vignette ouvre le viewer
+        // comme avant. Ne replie ni ne réordonne rien — l'ordre de la grille
+        // est sacré. Le coin haut-gauche lui est réservé : `ThumbnailCell`
+        // n'y pose plus rien (voir sa répartition des coins).
         .overlay(alignment: .topLeading) {
             if !isSelecting, let members = similarGroups[item.id] {
-                similarBadge(count: members.count, colorIndex: similarGroupColor[item.id] ?? 0) {
+                similarBadge(rank: similarGroupRank[item.id] ?? 0, count: members.count) {
                     duelContext = DuelContext(items: members)
                 }
             }
@@ -956,12 +957,14 @@ struct GridView: View {
             }
         }
         // Similaires : chemin fiable vers le tournoi (le badge ≈ est petit).
+        // Même numéro de lot que le badge, pour qu'on sache lequel on ouvre.
         if let members = similarGroups[item.id], members.count > 1 {
+            let lot = (similarGroupRank[item.id] ?? 0) + 1
             Section {
                 Button {
                     duelContext = DuelContext(items: members)
                 } label: {
-                    Label("Départager les similaires (\(members.count))", systemImage: "rectangle.split.2x1")
+                    Label("Départager le lot \(lot) (\(members.count) photos)", systemImage: "rectangle.split.2x1")
                 }
             }
         }
@@ -1493,7 +1496,7 @@ struct GridView: View {
     private func refreshSimilarGroups() async {
         guard similarityBadges else {
             similarGroups = [:]
-            similarGroupColor = [:]
+            similarGroupRank = [:]
             analyzedSimilarityKey = nil
             return
         }
@@ -1504,7 +1507,7 @@ struct GridView: View {
         let items = derived.filtered.filter { !$0.isVideo }
         guard items.count > 1 else {
             similarGroups = [:]
-            similarGroupColor = [:]
+            similarGroupRank = [:]
             analyzedSimilarityKey = nil
             return
         }
@@ -1538,38 +1541,50 @@ struct GridView: View {
     }
 
     /// Traduit des groupes d'identifiants en cartes `id → membres` **et**
-    /// `id → teinte` (rang du groupe, chronologique). Partagé par les snapshots
+    /// `id → rang du groupe` (chronologique). Partagé par les snapshots
     /// progressifs et le résultat final. Un groupe vide/singleton est ignoré.
+    ///
+    /// Le rang est attribué dans l'ordre d'arrivée des groupes, donc
+    /// chronologique : le lot 1 est le plus ancien du périmètre. Les snapshots
+    /// progressifs conservent cet ordre, un lot ne change donc pas de numéro
+    /// en cours d'analyse — il s'en ajoute seulement à la suite.
     private func applySimilarGroups(_ groups: [[PhotoItem.ID]], byID: [PhotoItem.ID: PhotoItem]) {
         var map: [PhotoItem.ID: [PhotoItem]] = [:]
-        var colors: [PhotoItem.ID: Int] = [:]
-        // `groups` arrive dans l'ordre chronologique : le rang sert directement
-        // de teinte, si bien que deux groupes voisins tombent sur des couleurs
-        // distinctes de la palette (cyclique, pas unique).
+        var ranks: [PhotoItem.ID: Int] = [:]
         var rank = 0
         for group in groups {
             let members = group.compactMap { byID[$0] }
             guard members.count > 1 else { continue }
             for member in members {
                 map[member.id] = members
-                colors[member.id] = rank
+                ranks[member.id] = rank
             }
             rank += 1
         }
         similarGroups = map
-        similarGroupColor = colors
+        similarGroupRank = ranks
     }
 
     /// Badge ≈ : signale que la photo a des sosies **dans le périmètre
     /// affiché**, sans la déplacer ni la replier. Le toucher ouvre le tournoi
-    /// (`DuelView`) sur le groupe. Teinté et distinct du badge de pile (rafale)
-    /// pour ne pas les confondre.
-    private func similarBadge(count: Int, colorIndex: Int, action: @escaping () -> Void) -> some View {
-        let tint = Self.similarPalette[colorIndex % Self.similarPalette.count]
+    /// (`DuelView`) sur le groupe.
+    ///
+    /// Libellé « **lot.compte** » (`2.10` = lot 2, dix photos). Le seul compte
+    /// ne disait pas *quel* lot : deux vignettes voisines marquées « 3 »
+    /// pouvaient appartenir à deux groupes différents, et la teinte cyclique ne
+    /// tranchait pas (elle se répète au-delà de huit lots). Avec le numéro,
+    /// l'appartenance se lit sans ouvrir le tournoi. La teinte reste, comme
+    /// repère rapide sur les lots voisins.
+    private func similarBadge(rank: Int, count: Int, action: @escaping () -> Void) -> some View {
+        let tint = SimilarBadgeStyle.tint(forRank: rank)
+        let lot = rank + 1
         return Button(action: action) {
             HStack(spacing: 3) {
+                // L'icône reste : sur une vignette qui porte déjà une note et
+                // un badge vidéo, deux nombres nus ne diraient pas de quoi il
+                // s'agit.
                 Image(systemName: "square.on.square.dashed")
-                Text("\(count)")
+                Text("\(lot).\(count)")
             }
             .font(.caption2.weight(.bold))
             .foregroundStyle(.white)
@@ -1579,7 +1594,7 @@ struct GridView: View {
             .padding(5)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Départager \(count) photos similaires")
+        .accessibilityLabel("Lot de similaires \(lot), \(count) photos — départager")
     }
 
     /// « Synchroniser l'album du voyage » : enregistre d'un coup les gardées

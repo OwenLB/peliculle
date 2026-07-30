@@ -3,10 +3,11 @@ import SwiftUI
 /// Revue UX (UX3) — filmstrip du viewer : bande horizontale de miniatures
 /// au-dessus des contrôles du bas, photo courante centrée et mise en
 /// évidence (liseré blanc + légère échelle), façon Photos.app / Photo
-/// Mechanic. Un tap saute directement à la photo — **sans animation du
-/// pager** (animer la sélection du `TabView` produit un défilement glitché,
-/// voir `FullScreenViewer.advance()`) ; c'est la bande qui anime son
-/// recentrage (`scrollPosition(id:anchor: .center)`).
+/// Mechanic. Un tap saute directement à la photo : le pager (`PhotoPager`)
+/// anime le saut **du bon côté**, en avant comme en arrière, et ne traverse
+/// pas les pages intermédiaires — sauter de 200 photos coûte un défilement,
+/// pas deux cents. La bande, elle, anime son recentrage
+/// (`scrollPosition(id:anchor: .center)`).
 ///
 /// La bande sert aussi de **carte de progression** : rejetées assombries
 /// (même voile que la grille), gardées marquées d'un point vert — les
@@ -41,7 +42,8 @@ struct FilmstripView: View {
             LazyHStack(spacing: 6) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { offset, item in
                     Button {
-                        // Saut direct, pager sans animation (voir en-tête).
+                        // Saut direct : le pager s'occupe de l'animation et
+                        // de sa direction (voir en-tête).
                         index = offset
                     } label: {
                         FilmstripThumb(item: item, isCurrent: offset == index)
@@ -59,9 +61,9 @@ struct FilmstripView: View {
         // la photo ouverte au bord gauche au lieu du centre.
         .defaultScrollAnchor(.center)
         .scrollIndicators(.hidden)
-        // Marge verticale : l'échelle 1.1× de la vignette courante ne doit
-        // pas être rognée par le clip du ScrollView.
-        .frame(height: Self.thumbSide + 10)
+        // Marge verticale : l'échelle 1.18× de la vignette courante (+ son
+        // ombre portée) ne doit pas être rognée par le clip du ScrollView.
+        .frame(height: Self.thumbSide + 16)
         .onChange(of: index) {
             guard items.indices.contains(index) else { return }
             withAnimation(.snappy(duration: 0.25)) {
@@ -93,10 +95,15 @@ private struct FilmstripThumb: View {
                     Rectangle().fill(.quaternary)
                 }
             }
+            // Rejetée : assombrie (voile noir, couleur d'origine conservée),
+            // qu'elle soit courante ou non — c'est un statut, pas un effet de
+            // mise en avant. Gardée et non triée gardent leurs couleurs
+            // pleines : la mise en avant de la courante se joue sur le
+            // contour/l'échelle/l'ombre, pas en assourdissant tout le reste
+            // de la bande.
             .overlay {
-                // Carte de progression — rejetée : même voile que la grille.
                 if item.decision == .reject {
-                    Color.black.opacity(0.45)
+                    Color.black.opacity(0.55)
                 }
             }
             .overlay(alignment: .bottom) {
@@ -114,10 +121,11 @@ private struct FilmstripThumb: View {
             .overlay {
                 if isCurrent {
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(.white, lineWidth: 2)
+                        .stroke(.white, lineWidth: 2.5)
                 }
             }
-            .scaleEffect(isCurrent ? 1.1 : 1)
+            .shadow(color: .black.opacity(isCurrent ? 0.35 : 0), radius: isCurrent ? 3 : 0, y: 1)
+            .scaleEffect(isCurrent ? 1.18 : 1)
             .animation(.snappy(duration: 0.2), value: isCurrent)
             .task(id: item.id) {
                 // Même taille cible que la grille → cache partagé, la

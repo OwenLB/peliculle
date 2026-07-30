@@ -961,6 +961,16 @@
         }
       }
     },
+    "%lld.%lld" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld.%2$lld"
+          }
+        }
+      }
+    },
     "+%lld" : {
 
     },
@@ -1697,11 +1707,15 @@
     "Départager (%lld)" : {
 
     },
-    "Départager %lld photos similaires" : {
-
-    },
-    "Départager les similaires (%lld)" : {
-
+    "Départager le lot %lld (%lld photos)" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Départager le lot %1$lld (%2$lld photos)"
+          }
+        }
+      }
     },
     "Depuis le %@" : {
       "localizations" : {
@@ -2512,6 +2526,16 @@
         }
       }
     },
+    "Lot de similaires %lld, %lld photos — départager" : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Lot de similaires %1$lld, %2$lld photos — départager"
+          }
+        }
+      }
+    },
     "Masquer la note" : {
       "localizations" : {
         "en" : {
@@ -2938,9 +2962,6 @@
           }
         }
       }
-    },
-    "Référence" : {
-
     },
     "Réglages" : {
       "localizations" : {

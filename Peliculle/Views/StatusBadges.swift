@@ -19,20 +19,12 @@ struct SavedBadge: View {
     }
 }
 
-/// « Référence » (pick) : LA préférée d'un groupe, gardée et marquée. S'affiche
-/// **à la place** de la coche « gardée » (une référence est forcément gardée) —
-/// étoile cerclée jaune, distincte de la note (étoile pleine sur capsule).
-struct ReferenceBadge: View {
-    var font: Font = .body
-
-    var body: some View {
-        Image(systemName: "star.circle.fill")
-            .font(font)
-            .foregroundStyle(.white, .yellow)
-            .shadow(radius: 2)
-            .accessibilityLabel("Référence")
-    }
-}
+// Pas de badge « référence » ici : la **couronne** du gagnant d'un tournoi
+// est un marqueur du tournoi et de son récap (`DuelView`, qui la dessine
+// lui-même), pas un statut de photo à porter partout. `isReference` reste un
+// axe du modèle (persisté, annulable) ; il ne se lit simplement plus dans la
+// grille ni dans le viewer, où une référence est une photo gardée comme une
+// autre.
 
 /// Décision de tri (F5) ; rien tant que la photo n'est pas triée.
 struct DecisionBadge: View {
@@ -56,6 +48,22 @@ struct DecisionBadge: View {
             .foregroundStyle(.white, color)
             .shadow(radius: 2)
             .accessibilityLabel(label)
+    }
+}
+
+/// Palette cyclique du badge ≈ des similaires, partagée entre la grille (où
+/// elle sépare des lots voisins) et le viewer (où elle reprend la teinte du
+/// **même** lot plutôt qu'une couleur fixe) — un lot garde ainsi la même
+/// couleur d'un écran à l'autre. Six teintes système, en alternance
+/// chaude/froide pour que deux voisines ne se confondent jamais : suffisamment
+/// séparées à l'œil, jamais du rouge ni du vert (déjà pris par
+/// Rejeter/Garder), jamais de jaune (contraste trop faible sous le glyphe
+/// blanc du badge).
+enum SimilarBadgeStyle {
+    static let palette: [Color] = [.blue, .orange, .purple, .pink, .indigo, .mint]
+
+    static func tint(forRank rank: Int) -> Color {
+        palette[rank % palette.count]
     }
 }
 

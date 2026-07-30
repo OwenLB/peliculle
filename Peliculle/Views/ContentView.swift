@@ -65,8 +65,6 @@ struct ContentView: View {
                 } else if let session {
                     GridView(
                         session: session,
-                        recentAlbums: recentAlbums,
-                        recentFolders: recentFolders,
                         onChangeSource: handle(_:)
                     )
                     // Changer de source = repartir d'une grille vierge

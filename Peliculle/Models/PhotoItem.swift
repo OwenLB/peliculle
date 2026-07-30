@@ -69,6 +69,10 @@ final class PhotoItem: Identifiable {
     /// keep (rejet, remise à non triée) efface le marquage. Axe distinct de la
     /// note : un repère « c'est celle-là la principale » parmi les gardées.
     /// Posée par `CullSession.resolve`/`elect`, persistée par `SessionStore`.
+    ///
+    /// Ne se **lit** que dans le tournoi et son récap (couronne) : c'est là
+    /// qu'il dit qui vient de gagner. Ni la grille ni le viewer ne l'affichent
+    /// — hors du duel, la distinction ne servait aucune décision de tri.
     var isReference: Bool = false
 
     /// Vrai une fois la photo copiée dans la pellicule iOS (source carte) ou
@@ -104,9 +108,10 @@ final class PhotoItem: Identifiable {
     /// prise de vue et GPS portés par `PHAsset`, sans I/O).
     var exif: PhotoExif?
 
-    /// Durée d'un clip vidéo (idée 18), remplie paresseusement à
-    /// l'apparition de la cellule (`AVURLAsset.load(.duration)`) — jamais
-    /// lue au scan. Toujours nil pour une photo.
+    /// Durée d'un clip vidéo (idée 18), remplie paresseusement à l'apparition
+    /// de la cellule (`VideoInfo.duration(of:)` : conteneur ouvert pour un
+    /// fichier, propriété gratuite pour un asset) — jamais lue au scan.
+    /// Toujours nil pour une photo.
     var videoDuration: TimeInterval?
 
     /// Ratio largeur/hauteur d'un clip vidéo (orientation appliquée), rempli
@@ -144,7 +149,16 @@ final class PhotoItem: Identifiable {
 
     nonisolated init(asset: PHAsset) {
         self.backing = .asset(asset)
-        self.contentType = nil
+        // Une vidéo de la photothèque doit se reconnaître comme telle : c'est
+        // `isVideo` qui aiguille vers le lecteur, allume le badge de durée et
+        // écarte le clip des passes Vision / EXIF image. `.movie` est le type
+        // **générique** — il suffit à tout ce que l'app en fait ; le type
+        // exact (QuickTime, MP4…) demanderait un `PHAssetResource` par asset,
+        // hors de question à l'énumération d'une photothèque de 10 000
+        // éléments. Une image reste sans type : PhotoKit ne l'expose pas plus
+        // gratuitement, et le filtre par extension le documente déjà
+        // (`FormatFilter.available`).
+        self.contentType = asset.mediaType == .video ? .movie : nil
         self.fileDate = asset.creationDate
         self.fileSize = nil
     }
@@ -192,9 +206,10 @@ final class PhotoItem: Identifiable {
     /// `PHImageManager` gère le décodage de toute façon.
     nonisolated var isRAW: Bool { contentType?.conforms(to: .rawImage) ?? false }
 
-    /// Vrai pour un clip vidéo de la carte (idée 18) : vignette via
-    /// AVFoundation, lecture dans le viewer, pas de zoom ni de signaux
-    /// Vision. Les sources photothèque ne chargent que des images.
+    /// Vrai pour un clip vidéo (idée 18), **quelle que soit la source** :
+    /// fichier de la carte comme asset de la photothèque. Vignette via
+    /// AVFoundation ou PhotoKit, lecture dans le viewer, pas de zoom ni de
+    /// signaux Vision.
     nonisolated var isVideo: Bool { contentType?.conforms(to: .movie) ?? false }
 
     /// Extension en majuscules (CR2, JPG, HEIC…), pour le filtre par format.

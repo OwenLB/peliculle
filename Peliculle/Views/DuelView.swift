@@ -379,7 +379,6 @@ private struct DuelPane: View {
 private struct DuelRecapView: View {
     let contenders: [PhotoItem]
     let referenceID: PhotoItem.ID
-    let initiallyKept: Set<PhotoItem.ID>
     var onFinish: (Set<PhotoItem.ID>) -> Void
     var onCancel: () -> Void
 
@@ -397,7 +396,6 @@ private struct DuelRecapView: View {
     ) {
         self.contenders = contenders
         self.referenceID = referenceID
-        self.initiallyKept = initiallyKept
         self.onFinish = onFinish
         self.onCancel = onCancel
         _kept = State(initialValue: initiallyKept)

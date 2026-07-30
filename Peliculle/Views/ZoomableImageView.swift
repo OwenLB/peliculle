@@ -5,28 +5,29 @@ import UIKit
 /// natif le plus fiable pour le zoom photo) plutôt que sur des gestes SwiftUI :
 /// pinch, double-tap et pan sont gérés par le système.
 ///
-/// Astuce clé pour cohabiter avec le pager SwiftUI (`TabView`) : au zoom
-/// minimal, on **désactive le scroll** (`isScrollEnabled = false`) ; les swipes
-/// horizontaux retombent alors sur le pager pour changer de photo. Dès qu'on
-/// zoome, le scroll reprend pour permettre le pan, et le pager est neutralisé.
+/// Astuce clé pour cohabiter avec le pager (`PhotoPager`) : au zoom minimal, on
+/// **désactive le scroll** (`isScrollEnabled = false`) ; le pan horizontal
+/// retombe alors sur le pager, qui change de photo avec son geste continu.
+/// Dès qu'on zoome, le scroll reprend pour permettre le recadrage et le viewer
+/// coupe le pager de son côté (`pagingEnabled: false`) — à aucun moment les
+/// deux scroll views ne se disputent le geste.
+///
+/// La navigation horizontale ne vit **pas** ici : elle appartient au pager. Des
+/// `UISwipeGestureRecognizer` gauche/droite l'ont portée un temps, mais un
+/// geste discret ne peut pas produire un défilement fluide (pas de suivi du
+/// doigt, sourd aux swipes lents). Seul le swipe **vers le haut** reste — un
+/// raccourci de tri, pas une navigation, pour lequel le tout-ou-rien convient.
 struct ZoomableImageView: UIViewRepresentable {
     let image: UIImage?
     var onZoomChange: (Bool) -> Void
     var onSingleTap: () -> Void
     var onSwipeUp: () -> Void
-    /// Navigation horizontale par swipe **directionnel** (UIKit) : gauche =
-    /// suivante, droite = précédente. Directionnel exprès — un `DragGesture`
-    /// SwiftUI captait tout le geste et bloquait le pull-to-dismiss vertical.
-    var onSwipeLeft: () -> Void
-    var onSwipeRight: () -> Void
 
     func makeUIView(context: Context) -> ZoomableScrollView {
         let view = ZoomableScrollView()
         view.onZoomChange = onZoomChange
         view.onSingleTap = onSingleTap
         view.onSwipeUp = onSwipeUp
-        view.onSwipeLeft = onSwipeLeft
-        view.onSwipeRight = onSwipeRight
         view.displayImage = image
         return view
     }
@@ -35,8 +36,6 @@ struct ZoomableImageView: UIViewRepresentable {
         view.onZoomChange = onZoomChange
         view.onSingleTap = onSingleTap
         view.onSwipeUp = onSwipeUp
-        view.onSwipeLeft = onSwipeLeft
-        view.onSwipeRight = onSwipeRight
         // Ne remplace l'image (ex. aperçu → pleine résolution) que si elle a
         // réellement changé, pour ne pas réinitialiser le zoom en cours.
         if view.displayImage !== image {
@@ -51,15 +50,11 @@ final class ZoomableScrollView: UIScrollView, UIScrollViewDelegate {
 
     private let imageView = UIImageView()
     private let swipeUpGesture = UISwipeGestureRecognizer()
-    private let swipeLeftGesture = UISwipeGestureRecognizer()
-    private let swipeRightGesture = UISwipeGestureRecognizer()
     private var lastZoomedState = false
 
     var onZoomChange: ((Bool) -> Void)?
     var onSingleTap: (() -> Void)?
     var onSwipeUp: (() -> Void)?
-    var onSwipeLeft: (() -> Void)?
-    var onSwipeRight: (() -> Void)?
 
     var displayImage: UIImage? {
         didSet {
@@ -87,7 +82,7 @@ final class ZoomableScrollView: UIScrollView, UIScrollViewDelegate {
         showsHorizontalScrollIndicator = false
         contentInsetAdjustmentBehavior = .never
         backgroundColor = .clear
-        isScrollEnabled = false // au zoom min : laisser le pager gérer les swipes
+        isScrollEnabled = false // au zoom min : laisser le pager prendre le pan
 
         imageView.contentMode = .scaleAspectFit
         addSubview(imageView)
@@ -107,16 +102,6 @@ final class ZoomableScrollView: UIScrollView, UIScrollViewDelegate {
         swipeUpGesture.direction = .up
         swipeUpGesture.addTarget(self, action: #selector(handleSwipeUp))
         addGestureRecognizer(swipeUpGesture)
-
-        // Navigation horizontale : swipes directionnels, ils laissent le
-        // pull-to-dismiss vertical et le swipe-haut « garder » tranquilles.
-        swipeLeftGesture.direction = .left
-        swipeLeftGesture.addTarget(self, action: #selector(handleSwipeLeft))
-        addGestureRecognizer(swipeLeftGesture)
-
-        swipeRightGesture.direction = .right
-        swipeRightGesture.addTarget(self, action: #selector(handleSwipeRight))
-        addGestureRecognizer(swipeRightGesture)
     }
 
     override func layoutSubviews() {
@@ -140,9 +125,6 @@ final class ZoomableScrollView: UIScrollView, UIScrollViewDelegate {
         let zoomed = zoomScale > minimumZoomScale + 0.01
         isScrollEnabled = zoomed
         swipeUpGesture.isEnabled = !zoomed
-        // Au zoom, le pan sert à recadrer : pas de navigation horizontale.
-        swipeLeftGesture.isEnabled = !zoomed
-        swipeRightGesture.isEnabled = !zoomed
         if zoomed != lastZoomedState {
             lastZoomedState = zoomed
             onZoomChange?(zoomed)
@@ -189,18 +171,6 @@ final class ZoomableScrollView: UIScrollView, UIScrollViewDelegate {
     @objc private func handleSwipeUp() {
         if zoomScale <= minimumZoomScale + 0.01 {
             onSwipeUp?()
-        }
-    }
-
-    @objc private func handleSwipeLeft() {
-        if zoomScale <= minimumZoomScale + 0.01 {
-            onSwipeLeft?()
-        }
-    }
-
-    @objc private func handleSwipeRight() {
-        if zoomScale <= minimumZoomScale + 0.01 {
-            onSwipeRight?()
         }
     }
 }

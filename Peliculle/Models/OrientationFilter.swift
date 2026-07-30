@@ -43,14 +43,6 @@ enum OrientationFilter: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
-        switch self {
-        case .all: return "rectangle.on.rectangle.angled"
-        case .landscape: return "rectangle"
-        case .portrait: return "rectangle.portrait"
-        }
-    }
-
     @MainActor
     func matches(_ item: PhotoItem) -> Bool {
         switch self {

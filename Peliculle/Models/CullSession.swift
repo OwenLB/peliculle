@@ -48,11 +48,6 @@ final class CullSession {
     var sources: [PhotoSource] { slots.map(\.source) }
     var isCombined: Bool { slots.count > 1 }
 
-    /// Store primaire — porte l'album de destination, l'état « confirmé » et le
-    /// voyage initiaux ; à la sauvegarde, ces réglages **de session** sont
-    /// recopiés dans tous les stores (une source rouverte seule les retrouve).
-    private var primaryStore: SessionStore { slots[0].store }
-
     /// Vrai si **toutes** les sources sont adossées à la photothèque : garder =
     /// ajouter à l'album, pas d'export/partage d'original, suppression
     /// photothèque. En combiné (au moins une carte), c'est faux — l'UI décide
@@ -267,13 +262,6 @@ final class CullSession {
         mutate(targets.filter { $0.rating != rating }) { $0.rating = rating }
     }
 
-    /// Idées 3/4 — élit la meilleure photo d'une pile ou d'un duel : garde la
-    /// gagnante **et la marque référence**, rejette toutes les autres. Cas
-    /// particulier de `resolve` sans gardées-aussi.
-    func elect(_ winner: PhotoItem, among group: [PhotoItem]) {
-        resolve(reference: winner, keep: [], reject: group.filter { $0.id != winner.id })
-    }
-
     /// Résout un groupe départagé (tournoi/duel) en **une seule entrée
     /// d'annulation** : une **référence** (la préférée, gardée + marquée), des
     /// **gardées aussi** (sympas, conservées sans être la référence), le
@@ -367,6 +355,48 @@ final class CullSession {
         for slot in slots {
             let owned = items.filter { $0.origin == slot.source }
             slot.store.save(owned, album: albumDestination, albumConfirmed: albumConfirmed, trip: trip)
+        }
+    }
+
+    /// Dette connue (ROADMAP) — une photo carte enregistrée dans la
+    /// pellicule crée un asset **doublon** : en session combinée il est
+    /// masqué par `merged` (jamais ajouté à `items`), en session carte seule
+    /// il n'existe même pas en mémoire. Dans les deux cas, sa décision ne
+    /// s'écrivait donc **jamais** sous l'identité photothèque de la copie —
+    /// rouvrir la photothèque seule plus tard la faisait ressortir non
+    /// triée. On recopie ici la décision/note/référence de l'instant de
+    /// l'enregistrement sur cette identité (`item.savedAssetID`) : si une
+    /// source photothèque est déjà chargée dans la session courante, on
+    /// écrit directement dans son store en mémoire (pas de double écrivain
+    /// concurrent sur le même fichier) ; sinon on charge à la volée le store
+    /// de l'identité `library` (partagée par tous les scopes photothèque),
+    /// le temps d'y poser cette seule clé.
+    ///
+    /// Portée volontairement limitée à **l'instant de l'enregistrement** :
+    /// un changement de décision ultérieur sans nouvel enregistrement ne se
+    /// propage pas ici (suivi continu jugé hors scope pour ce fix).
+    func mirrorToLibraryIfNeeded(_ item: PhotoItem) {
+        guard let assetID = item.savedAssetID else { return }
+        let decision = item.decision
+        let rating = item.rating
+        let isReference = item.isReference
+        if let libSlot = slots.first(where: { if case .library = $0.source { return true }; return false }) {
+            libSlot.store.upsertRecord(
+                assetLocalIdentifier: assetID,
+                decision: decision,
+                rating: rating,
+                isReference: isReference
+            )
+            return
+        }
+        Task {
+            let store = await SessionStore.load(for: .library(.all), items: [])
+            store.upsertRecord(
+                assetLocalIdentifier: assetID,
+                decision: decision,
+                rating: rating,
+                isReference: isReference
+            )
         }
     }
 

@@ -52,12 +52,15 @@ struct DecisionFlashBorder: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(color.opacity(0.85), lineWidth: 6)
-            .blur(radius: 2)
+            .strokeBorder(color, lineWidth: 10)
             .opacity(faded ? 0 : 1)
             .allowsHitTesting(false)
             .onAppear {
-                withAnimation(.easeOut(duration: 0.35).delay(0.05)) {
+                // Tenu **franc** un instant avant de s'estomper (pas de flou
+                // qui l'affadit) : avec le pager natif, la photo décidée glisse
+                // hors de l'écran quasi aussitôt — un liseré trop fin ou trop
+                // pressé s'y noyait complètement, lu comme « disparu ».
+                withAnimation(.easeOut(duration: 0.45).delay(0.15)) {
                     faded = true
                 }
             }

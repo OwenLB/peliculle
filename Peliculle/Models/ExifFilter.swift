@@ -21,15 +21,6 @@ enum ISOFilter: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
-        switch self {
-        case .all: return "photo.on.rectangle.angled"
-        case .low: return "sun.max"
-        case .mid: return "cloud.sun"
-        case .high: return "moon"
-        }
-    }
-
     @MainActor
     func matches(_ item: PhotoItem) -> Bool {
         guard self != .all else { return true }
@@ -60,15 +51,6 @@ enum FocalFilter: String, CaseIterable, Identifiable {
         case .wide: return String(localized: "Grand-angle < 35 mm")
         case .standard: return String(localized: "Standard 35 – 85 mm")
         case .tele: return String(localized: "Télé > 85 mm")
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .all: return "photo.on.rectangle.angled"
-        case .wide: return "field.of.view.wide"
-        case .standard: return "camera"
-        case .tele: return "plus.magnifyingglass"
         }
     }
 

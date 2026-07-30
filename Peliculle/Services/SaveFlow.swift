@@ -62,6 +62,13 @@ enum SaveFlow {
             )
             // Les marquages `savedToLibrary` doivent survivre au redémarrage.
             session.persistSoon()
+            // Dette connue (ROADMAP) — recopie la décision de chaque photo
+            // carte tout juste copiée sur l'identité photothèque de sa copie
+            // (no-op pour les items déjà photothèque, `savedAssetID` reste
+            // nil pour eux). Voir `CullSession.mirrorToLibraryIfNeeded`.
+            for item in items {
+                session.mirrorToLibraryIfNeeded(item)
+            }
             outcome = Self.outcome(of: result, items: items)
         } catch {
             outcome = Outcome(errorMessage: error.localizedDescription)

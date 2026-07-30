@@ -26,17 +26,6 @@ enum PhotoSort: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
-        switch self {
-        case .captureDate: return "camera"
-        case .date: return "calendar"
-        case .name: return "textformat"
-        case .rating: return "star"
-        case .size: return "scalemass"
-        case .aesthetic: return "sparkles"
-        }
-    }
-
     /// Sens proposé au premier choix du critère : chronologique et
     /// alphabétique en croissant, meilleures notes, fichiers lourds et
     /// meilleurs scores d'abord.

@@ -2,9 +2,12 @@ import SwiftUI
 import TipKit
 
 /// F3 + F4 + F5 + F9 — viewer plein écran paginé sur l'ensemble **affiché**
-/// (respecte le filtre de la grille). Le `TabView` en style page fournit
-/// l'inertie/snap natifs ; la transition d'entrée (zoom hero) et le
-/// pull-to-dismiss sont apportés par `.navigationTransition(.zoom:)` côté grille.
+/// (respecte le filtre de la grille). Le défilement est porté par
+/// `PhotoPager` (`UIPageViewController`) : geste continu au doigt, rubber-band
+/// aux extrémités, snap à la vélocité — et **la même animation** quand
+/// l'avance vient d'un bouton de tri ou du filmstrip. La transition d'entrée
+/// (zoom hero) et le pull-to-dismiss sont apportés par
+/// `.navigationTransition(.zoom:)` côté grille.
 /// Chaque page est zoomable (`ZoomableImageView`). Barres en **Liquid Glass**,
 /// effacées pendant l'inspection au zoom. Haptique native.
 ///
@@ -19,8 +22,11 @@ import TipKit
 /// pull-to-dismiss natif prend le bas ; on dédie donc le **swipe vers le haut =
 /// garder** (accélérateur, actif uniquement en mode tri), keep/reject restant
 /// disponibles sur les boutons. L'avance après décision **fait glisser** la
-/// page vers la suivante (les voisines sont préchauffées, `prefetchNeighbors`,
-/// donc plus de défilement glitché de page en cours de chargement).
+/// page vers la suivante, sans délai : la confirmation est portée par un
+/// overlay indépendant de la page (pastille) et par le liseré qui part avec la
+/// photo décidée — la carte qui s'en va **est** l'accusé de réception. Les
+/// voisines sont préchauffées (`prefetchNeighbors`), donc la page qui entre
+/// glisse sur une vraie image.
 struct FullScreenViewer: View {
     let session: CullSession
     /// Snapshot local : la suppression d'une photo retire sa page sans
@@ -35,11 +41,11 @@ struct FullScreenViewer: View {
     @State private var flashCount = 0
     @State private var keepFeedback = 0
     @State private var rejectFeedback = 0
-    /// Page à quitter une fois le flash joué (retour Owen : avancer à
-    /// l'instant du tap remplaçait la photo avant qu'on voie le retour).
-    /// Nil si rien n'est en attente ; invalidé si l'utilisateur change de
-    /// page lui-même entre-temps.
-    @State private var pendingAdvanceIndex: Int?
+    /// Photo **sur laquelle** le liseré de décision se joue. On avance
+    /// immédiatement après une décision : le liseré doit rester sur la photo
+    /// décidée pendant qu'elle glisse hors de l'écran, pas se rejouer sur la
+    /// suivante (qui n'a rien demandé).
+    @State private var flashItemID: PhotoItem.ID?
     @State private var isZoomed = false
     /// Tap simple = mode immersif : la photo occupe tout l'écran, le HUD
     /// (capsule de titre, contrôles, barre de navigation, barre d'état) se
@@ -65,17 +71,20 @@ struct FullScreenViewer: View {
     /// Groupes de similaires (id → membres), transmis par la grille : alimente
     /// le badge ≈ cliquable du viewer et le tournoi qu'il ouvre.
     let similarGroups: [PhotoItem.ID: [PhotoItem]]
+    /// Rang du lot de similaires (id → rang 0-based), transmis par la grille :
+    /// le badge affiche le **même numéro de lot** qu'elle (« 2.10 »), sinon on
+    /// ne saurait pas qu'on regarde le lot qu'on venait de repérer en grille.
+    let similarRanks: [PhotoItem.ID: Int]
     /// Tournoi ouvert depuis le badge ≈ (sous-ensemble des sosies de la photo).
     @State private var duelContext: DuelContext?
-    /// Bord d'où **entre** la nouvelle page à la transition : `.trailing` en
-    /// avançant (photo suivante venant de droite), `.leading` en reculant.
-    @State private var navDirection: Edge = .trailing
+    /// Préchauffage des pages voisines, **annulable** : un défilement rapide
+    /// doit abandonner les décodages devenus inutiles au lieu de les empiler.
+    @State private var prefetchTasks: [Task<Void, Never>] = []
 
     @AppStorage("cullModeEnabled") private var cullMode = false
     @AppStorage("ratingRowVisible") private var showRatingRow = false
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.colorScheme) private var colorScheme
     /// Idée 23 — ② : un enregistrement qui se termine hors écran envoie son
     /// récap en notification (via `SaveFlow`).
@@ -85,12 +94,14 @@ struct FullScreenViewer: View {
         session: CullSession,
         items: [PhotoItem],
         startIndex: Int,
-        similarGroups: [PhotoItem.ID: [PhotoItem]] = [:]
+        similarGroups: [PhotoItem.ID: [PhotoItem]] = [:],
+        similarRanks: [PhotoItem.ID: Int] = [:]
     ) {
         self.session = session
         self._items = State(initialValue: items)
         self._index = State(initialValue: startIndex)
         self.similarGroups = similarGroups
+        self.similarRanks = similarRanks
     }
 
     private var currentItem: PhotoItem { items[index] }
@@ -114,8 +125,11 @@ struct FullScreenViewer: View {
     /// secondaires. La capsule n'en montre que **deux** + « +n » : au-delà,
     /// capsules dans la capsule sur toute la largeur — le détail vit dans la
     /// fiche ⓘ et les contrôles.
+    ///
+    /// Pas de badge « référence » : la couronne du gagnant vit dans le
+    /// tournoi et son récap, pas ailleurs (voir `ThumbnailCell`). Une
+    /// référence est de toute façon gardée, elle porte donc la coche verte.
     private enum StatusBadgeKind: Hashable {
-        case reference
         case decision
         case saved
         case rating
@@ -123,12 +137,7 @@ struct FullScreenViewer: View {
 
     private var activeBadges: [StatusBadgeKind] {
         var badges: [StatusBadgeKind] = []
-        // La référence remplace la coche « gardée » (elle l'implique).
-        if currentItem.isReference {
-            badges.append(.reference)
-        } else if currentItem.decision != .undecided {
-            badges.append(.decision)
-        }
+        if currentItem.decision != .undecided { badges.append(.decision) }
         if currentItem.savedToLibrary { badges.append(.saved) }
         if currentItem.rating > 0 { badges.append(.rating) }
         return badges
@@ -139,20 +148,19 @@ struct FullScreenViewer: View {
     private var showsChrome: Bool { !isZoomed && !hudHidden }
 
     var body: some View {
-        // Page **unique** + transition de poussée directionnelle : le swipe
-        // horizontal (directionnel, dans `ZoomableScrollView`) et l'avance après
-        // décision passent par les **mêmes** fonctions `advance()`/`retreat()`,
-        // donc la **même animation** (le geste natif du `TabView` « remplaçait »
-        // la photo au lieu de la faire glisser). Swipes directionnels exprès :
-        // un `DragGesture` SwiftUI bloquait le pull-to-dismiss vertical. Une
-        // seule page rendue : mémoire minimale, plus de fenêtre à gérer ; la
-        // voisine est déjà décodée (`prefetchNeighbors` + cache synchrone) donc
-        // la poussée glisse sur une vraie image.
-        ZStack {
-            photoPage(for: currentItem)
-                .id(currentItem.id)
-                .transition(.push(from: navDirection))
-        }
+        // Défilement natif (`PhotoPager` / `UIPageViewController`) : le geste
+        // suit le doigt et snappe à la vélocité, et l'avance après décision
+        // emprunte **exactement** la même animation en passant par le binding
+        // `index`. Le pager reste maître de l'horizontal ; le vertical (donc
+        // le pull-to-dismiss natif) lui échappe entièrement, ce qui était tout
+        // le problème d'un `DragGesture` SwiftUI.
+        //
+        // Mode immersif : le pager déborde de la safe area pour que la photo
+        // aille bord à bord. Hors immersif il la respecte, ce qui lui fait
+        // aussi respecter l'inset des contrôles du bas (`safeAreaInset`) —
+        // chaque page se cadre alors dans la zone qui lui reste.
+        photoPager
+            .ignoresSafeArea(edges: hudHidden ? .all : [])
         // Fond **adaptatif** : blanc en apparence claire, noir en sombre — il
         // suit le réglage de l'iPhone (comme partout dans l'app). Il déborde
         // seul de la safe area (comportement par défaut de `background(_:)`) ;
@@ -240,18 +248,18 @@ struct FullScreenViewer: View {
                     .allowsHitTesting(false)
             }
         }
+        // Retrait du flash une fois joué. Il ne retarde plus rien : l'avance
+        // a déjà eu lieu, le liseré part avec la photo décidée et la pastille
+        // s'estompe par-dessus la suivante.
         .task(id: flashCount) {
             guard flashDecision != nil else { return }
-            try? await Task.sleep(for: .seconds(0.35))
+            // Couvre le délai + la durée du fondu de `DecisionFlashBorder`
+            // (0,15 + 0,45 s) : le retirer plus tôt le coupait avant la fin de
+            // son animation.
+            try? await Task.sleep(for: .seconds(0.65))
             guard !Task.isCancelled else { return }
             flashDecision = nil
-            // Le flash s'est joué sur la photo décidée → on avance maintenant
-            // (toujours sans animation de pager), sauf si l'utilisateur a
-            // changé de page entre-temps.
-            if let pending = pendingAdvanceIndex {
-                pendingAdvanceIndex = nil
-                if pending == index { advance() }
-            }
+            flashItemID = nil
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: hapticTrigger)
         .sensoryFeedback(.success, trigger: keepFeedback)
@@ -264,13 +272,18 @@ struct FullScreenViewer: View {
             // (`DuelView`) sur le sous-ensemble, comme depuis la grille.
             ToolbarItem(placement: .topBarLeading) {
                 if let similars = currentSimilars {
+                    // « lot.compte », comme en grille. Neutre ici (pas de
+                    // teinte par lot) : au milieu des icônes monochromes de la
+                    // barre (↩︎, ⋯, ⓘ…), une couleur qui tourne au fil des
+                    // photos y détonnait plutôt qu'elle n'orientait.
+                    let lot = (similarRanks[currentItem.id] ?? 0) + 1
                     Button {
                         duelContext = DuelContext(items: similars)
                     } label: {
-                        Label("\(similars.count)", systemImage: "square.on.square.dashed")
+                        Label("\(lot).\(similars.count)", systemImage: "square.on.square.dashed")
                     }
-                    .tint(.teal)
-                    .accessibilityLabel("Départager \(similars.count) photos similaires")
+                    .tint(.primary)
+                    .accessibilityLabel("Lot de similaires \(lot), \(similars.count) photos — départager")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -369,12 +382,17 @@ struct FullScreenViewer: View {
         .onChange(of: index, initial: true) {
             prefetchNeighbors()
         }
+        // Fermeture du viewer : rien à préchauffer pour un écran qu'on quitte.
+        .onDisappear {
+            prefetchTasks.forEach { $0.cancel() }
+            prefetchTasks = []
+        }
         .task(id: currentItem.id) {
             // Idée 18 — un clip n'a ni signaux Vision ni EXIF image ; seule
             // sa durée est chargée (pour la fiche et les badges).
             if currentItem.isVideo {
-                if currentItem.videoDuration == nil, let url = currentItem.url {
-                    currentItem.videoDuration = await VideoInfo.duration(of: url)
+                if currentItem.videoDuration == nil {
+                    currentItem.videoDuration = await VideoInfo.duration(of: currentItem.backing)
                 }
                 return
             }
@@ -402,8 +420,18 @@ struct FullScreenViewer: View {
         .successToast(message: $successToast)
     }
 
-    /// La page courante (photo ou vidéo). Extraite pour que `body` reste lisible
-    /// et que la transition/`id` s'appliquent proprement à un sous-arbre unique.
+    /// Le pager lui-même. Le zoom lui coupe le défilement : pendant une
+    /// inspection, le pan recadre l'image et ne doit pas tourner la page.
+    private var photoPager: some View {
+        PhotoPager(items: items, index: $index, pagingEnabled: !isZoomed) { item in
+            photoPage(for: item)
+        }
+    }
+
+    /// Une page du pager (photo ou vidéo). Le pager possède la page entière :
+    /// une vidéo se parcourt donc au swipe comme une photo, alors que les
+    /// anciens recognizers, posés sur la seule vue image, la laissaient sans
+    /// navigation gestuelle.
     private func photoPage(for item: PhotoItem) -> some View {
         PhotoDetailImage(
             item: item,
@@ -435,12 +463,10 @@ struct FullScreenViewer: View {
                     keepAndAdvance(item)
                 }
             },
-            // Navigation horizontale : mêmes `advance()`/`retreat()` que les
-            // boutons de tri (même transition glissée).
-            onSwipeLeft: { advance() },
-            onSwipeRight: { retreat() },
-            // Liseré de décision qui épouse la carte photo (`DecisionFlashBorder`).
-            flash: flashDecision,
+            // Liseré de décision qui épouse la carte photo
+            // (`DecisionFlashBorder`), porté par la **photo décidée** : il
+            // reste sur elle pendant qu'elle glisse hors de l'écran.
+            flash: item.id == flashItemID ? flashDecision : nil,
             flashID: flashCount
         )
         // Bord à bord en immersif (et photo) ; en mode carte on respecte la safe
@@ -499,8 +525,6 @@ struct FullScreenViewer: View {
     @ViewBuilder
     private func badgeView(_ badge: StatusBadgeKind) -> some View {
         switch badge {
-        case .reference:
-            ReferenceBadge(font: .footnote)
         case .decision:
             DecisionBadge(decision: currentItem.decision, font: .footnote)
         case .saved:
@@ -800,32 +824,31 @@ struct FullScreenViewer: View {
         }
     }
 
-    /// Toggle de la décision + retour visuel/haptique, puis avance **après le
-    /// flash** (~0,35 s, via la tâche de flash) pour que le retour se lise
-    /// sur la photo décidée. Remettre à « non triée » avance tout de suite
-    /// (pas de flash).
+    /// Toggle de la décision + retour visuel/haptique, puis avance **tout de
+    /// suite**. Pas de délai : le liseré teinté part avec la photo décidée
+    /// pendant qu'elle glisse, la pastille s'estompe par-dessus — la
+    /// confirmation est portée par le mouvement, pas par une attente
+    ///. Remettre à « non triée » avance aussi, sans flash.
     private func decide(_ decision: CullDecision) {
-        let target: CullDecision = (currentItem.decision == decision) ? .undecided : decision
-        session.setDecision(target, for: [currentItem])
-        signalDecision(target)
-        if target == .undecided {
-            advance()
-        } else {
-            pendingAdvanceIndex = index
-        }
+        let item = currentItem
+        let target: CullDecision = (item.decision == decision) ? .undecided : decision
+        session.setDecision(target, for: [item])
+        signalDecision(target, on: item)
+        advance()
     }
 
     /// Swipe vers le haut : garde la photo (sans toggle), flash, puis avance.
     private func keepAndAdvance(_ item: PhotoItem) {
         session.setDecision(.keep, for: [item])
-        signalDecision(.keep)
-        if item.id == currentItem.id { pendingAdvanceIndex = index }
+        signalDecision(.keep, on: item)
+        if item.id == currentItem.id { advance() }
     }
 
-    /// Idée 13 — retour transitoire de décision : flash de bord + pastille
-    /// (`DecisionFlashOverlay`) et haptique **différenciée** garder/rejeter.
-    /// Remettre à « non triée » garde l'haptique neutre historique, sans flash.
-    private func signalDecision(_ decision: CullDecision) {
+    /// Idée 13 — retour transitoire de décision : liseré autour de la photo
+    /// décidée + pastille (`DecisionFlashOverlay`) et haptique **différenciée**
+    /// garder/rejeter. Remettre à « non triée » garde l'haptique neutre
+    /// historique, sans flash.
+    private func signalDecision(_ decision: CullDecision, on item: PhotoItem) {
         switch decision {
         case .keep:
             keepFeedback += 1
@@ -836,44 +859,42 @@ struct FullScreenViewer: View {
             return
         }
         flashDecision = decision
+        flashItemID = item.id
         flashCount += 1
     }
 
-    /// Animation de changement de page, **partagée** par le swipe et les
-    /// boutons de tri : courte et décélérée pour coller au défilement natif
-    /// (l'ancienne, plus longue, « traînait »).
-    private static let pageAnimation: Animation = .easeOut(duration: 0.2)
-
-    /// Avance d'une photo en **faisant glisser** la page vers la gauche (la
-    /// suivante entre par la droite). Point d'entrée unique de l'avance : swipe
-    /// **et** boutons/geste de tri le partagent, donc une seule animation.
+    /// Avance d'une photo. Point d'entrée unique de l'avance : boutons de tri,
+    /// swipe-haut « garder » et filmstrip le partagent — et comme le pager
+    /// anime lui-même le changement d'`index`, c'est le **même** défilement
+    /// que celui du geste horizontal.
     private func advance() {
         guard index < items.count - 1 else { return }
-        navDirection = .trailing
-        withAnimation(Self.pageAnimation) { index += 1 }
-    }
-
-    /// Recule d'une photo (la précédente entre par la gauche). Symétrique
-    /// d'`advance()`, pour le swipe vers la droite.
-    private func retreat() {
-        guard index > 0 else { return }
-        navDirection = .leading
-        withAnimation(Self.pageAnimation) { index -= 1 }
+        index += 1
     }
 
     /// Préchauffe l'aperçu des pages **voisines** (biais avant : en tri on
-    /// avance) pour que swipe et avance après décision fassent glisser une
-    /// vraie image, pas un spinner qui « remplace » la photo. Résultats mis en
-    /// cache (`ImageCache`) : la page voisine, quand on l'atteint, s'affiche
-    /// sans temps de décodage. Vidéos exclues (le lecteur se monte à l'écran).
+    /// avance) pour que le défilement glisse sur une vraie image, pas sur un
+    /// spinner. Résultats mis en cache (`ImageCache`) : la page voisine,
+    /// quand on l'atteint, s'affiche sans temps de décodage. Vidéos exclues
+    /// (le lecteur se monte à l'écran).
+    ///
+    /// Les tâches de la position précédente sont **annulées** : sur un
+    /// défilement rapide, une photo dépassée n'a plus à être décodée, et
+    /// `ThumbnailLoader` sait s'arrêter en cours de route. Sans ça, traverser
+    /// cent photos lançait cent décodages 2048 px qui allaient tous au bout,
+    /// volant le CPU à la page qu'on regarde vraiment.
     private func prefetchNeighbors() {
+        prefetchTasks.forEach { $0.cancel() }
+        prefetchTasks = []
         let lower = max(0, index - 1)
         let upper = min(items.count - 1, index + 3)
         guard lower <= upper else { return }
         for offset in lower...upper where offset != index {
             let neighbor = items[offset]
             guard !neighbor.isVideo else { continue }
-            Task { _ = await ThumbnailLoader.load(item: neighbor, maxPixel: PhotoDetailImage.previewPixels) }
+            prefetchTasks.append(
+                Task { _ = await ThumbnailLoader.load(item: neighbor, maxPixel: PhotoDetailImage.previewPixels) }
+            )
         }
     }
 

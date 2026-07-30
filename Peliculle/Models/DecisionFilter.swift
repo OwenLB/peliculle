@@ -22,15 +22,6 @@ enum DecisionFilter: String, CaseIterable, Identifiable {
         }
     }
 
-    var icon: String {
-        switch self {
-        case .all: return "photo.on.rectangle.angled"
-        case .keep: return "checkmark.circle"
-        case .reject: return "xmark.circle"
-        case .undecided: return "questionmark.circle"
-        }
-    }
-
     // Les prédicats lisent l'état de tri des items (isolé main actor) — ils
     // ne servent qu'au filtrage d'affichage, sur le main thread.
     @MainActor

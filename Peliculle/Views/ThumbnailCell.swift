@@ -1,10 +1,18 @@
 import SwiftUI
 
 /// Une cellule carrée de la grille (F2). Skeleton pendant le chargement,
-/// badge de décision (F5) en surimpression, badge de note (F10), coche de
-/// sélection façon Photos.app en mode sélection. Les photos rejetées sont
-/// estompées pour balayer la grille d'un coup d'œil. Le chargement est
-/// paresseux et annulé automatiquement quand la cellule quitte l'écran.
+/// badge de décision (F5) en surimpression, badges d'orientation et de note
+/// (F10), coche de sélection façon Photos.app en mode sélection. Les photos
+/// rejetées sont estompées pour balayer la grille d'un coup d'œil. Le
+/// chargement est paresseux et annulé automatiquement quand la cellule quitte
+/// l'écran.
+///
+/// Répartition des coins, pour que deux badges ne se disputent jamais la même
+/// place : décision + « déjà enregistrée » en haut à droite (sur une ligne),
+/// orientation + note en bas à gauche (idem), vidéo/sélection en bas à droite.
+/// Le coin haut-**gauche** est laissé libre : `GridView` y pose le badge ≈ des
+/// similaires par-dessus la cellule — il porte une action, il doit donc rester
+/// hors du bouton qui ouvre le viewer, et ne peut pas être posé d'ici.
 struct ThumbnailCell: View {
     let item: PhotoItem
     var isSelecting = false
@@ -36,11 +44,8 @@ struct ThumbnailCell: View {
                     Color.white.opacity(0.2)
                 }
             }
-            .overlay(alignment: .topTrailing) { decisionBadge }
-            .overlay(alignment: .topLeading) {
-                savedBadge.padding(5)
-            }
-            .overlay(alignment: .bottomLeading) { ratingBadge }
+            .overlay(alignment: .topTrailing) { statusBadges }
+            .overlay(alignment: .bottomLeading) { infoBadges }
             .overlay(alignment: .bottomTrailing) { selectionBadge }
             .overlay(alignment: .bottomTrailing) { videoBadge }
             .clipped()
@@ -53,8 +58,8 @@ struct ThumbnailCell: View {
                 // Idée 18 — une vidéo n'a ni EXIF image ni signaux Vision :
                 // seule sa durée est chargée (paresseusement, comme le reste).
                 if item.isVideo {
-                    if item.videoDuration == nil, let url = item.url {
-                        item.videoDuration = await VideoInfo.duration(of: url)
+                    if item.videoDuration == nil {
+                        item.videoDuration = await VideoInfo.duration(of: item.backing)
                     }
                     return
                 }
@@ -73,30 +78,65 @@ struct ThumbnailCell: View {
 
     // Badges partagés avec le viewer (voir `StatusBadges.swift`).
 
-    private var decisionBadge: some View {
-        Group {
-            // Une référence est forcément gardée : son étoile remplace la coche
-            // verte (un seul badge en haut à droite, pas les deux).
-            if item.isReference {
-                ReferenceBadge(font: .title3)
-            } else {
-                DecisionBadge(decision: item.decision, font: .title3)
+    /// Statuts du coin haut-droit, sur **une seule ligne** : « déjà
+    /// enregistrée » puis la décision de tri. La décision reste collée à
+    /// l'angle et ne bouge donc jamais — c'est le badge qu'on balaie du regard
+    /// en triant ; l'autre s'insère à sa gauche quand il a lieu d'être.
+    ///
+    /// « Déjà enregistrée » vivait en haut à **gauche**, où `GridView` pose
+    /// aussi le badge ≈ des similaires : les deux se recouvraient dès qu'une
+    /// photo était à la fois enregistrée et dans un lot.
+    ///
+    /// La **référence** (gagnante d'un tournoi) n'a volontairement pas de
+    /// badge ici : la couronne appartient au tournoi et à son récap, où elle
+    /// dit qui a gagné le duel qu'on vient de juger. Sortie de ce contexte,
+    /// elle devenait une distinction permanente sur la grille sans rien
+    /// ajouter au tri. Une référence y lit donc comme ce qu'elle est aussi :
+    /// une photo gardée (`isReference` reste porté par le modèle).
+    private var statusBadges: some View {
+        HStack(spacing: 4) {
+            if item.savedToLibrary {
+                SavedBadge(font: .title3)
             }
+            DecisionBadge(decision: item.decision, font: .title3)
         }
         .padding(5)
     }
 
-    /// Signale qu'une copie est déjà dans la pellicule (cette session).
-    @ViewBuilder
-    private var savedBadge: some View {
-        if item.savedToLibrary {
-            SavedBadge(font: .footnote)
+    /// Repères de lecture du coin bas-gauche, sur **une seule ligne** : ils
+    /// partagent le coin, ils ne doivent donc jamais se recouvrir. Chacun
+    /// s'efface quand il n'a rien à dire (photo non notée, orientation pas
+    /// encore connue), et l'`HStack` se referme sur ce qui reste.
+    private var infoBadges: some View {
+        HStack(spacing: 4) {
+            orientationBadge
+            RatingBadge(rating: item.rating)
         }
+        .padding(5)
     }
 
-    private var ratingBadge: some View {
-        RatingBadge(rating: item.rating)
-            .padding(5)
+    /// Orientation portrait / paysage. Nécessaire parce que les cellules sont
+    /// **carrées** et l'aperçu rogné (`scaledToFill`) : le format d'origine
+    /// est invisible sur la vignette, contrairement au viewer. Mêmes glyphes
+    /// que le filtre d'orientation, pour qu'on relie le repère au filtre.
+    ///
+    /// Rien tant que l'EXIF n'est pas indexé — il arrive avec le `.task` de la
+    /// cellule, le badge apparaît donc juste après la vignette. Rien non plus
+    /// sur une vidéo : pas d'EXIF image (son format vit dans `videoAspect`,
+    /// que seul le viewer charge).
+    @ViewBuilder
+    private var orientationBadge: some View {
+        if !item.isVideo, let orientation = item.orientation {
+            Image(systemName: orientation.icon)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 3)
+                // Même capsule sombre que le badge vidéo : lisible sur
+                // n'importe quelle photo, sans peser comme un statut de tri.
+                .background(.black.opacity(0.45), in: .capsule)
+                .accessibilityLabel(Text(orientation.label))
+        }
     }
 
     /// Idée 18 — badge vidéo façon Photos.app (▶︎ + durée). Cède la place à

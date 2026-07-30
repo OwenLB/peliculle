@@ -28,15 +28,6 @@ enum FormatFilter: Hashable, Identifiable {
         }
     }
 
-    var icon: String {
-        switch self {
-        case .all: return "photo.stack"
-        case .raw: return "camera.aperture"
-        case .video: return "video"
-        case .ext: return "doc"
-        }
-    }
-
     func matches(_ item: PhotoItem) -> Bool {
         switch self {
         case .all: return true

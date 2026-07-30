@@ -33,9 +33,4 @@ enum SupportedFormats {
             || readableVideoTypes.contains { type.conforms(to: $0) }
     }
 
-    /// Variante URL — lit le type du fichier ; préférer la variante type
-    /// quand les propriétés sont déjà préfetchées (`FolderScanner`).
-    static func isSupported(_ url: URL) -> Bool {
-        isSupported(try? url.resourceValues(forKeys: [.contentTypeKey]).contentType)
-    }
 }

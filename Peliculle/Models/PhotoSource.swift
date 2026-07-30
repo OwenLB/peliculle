@@ -25,11 +25,15 @@ enum PhotoSource: Hashable {
     case library(LibraryScope)
 
     /// Nom affiché en titre de la grille (orientation : savoir où on est).
+    /// Photothèque : toujours « Photothèque », jamais la période choisie —
+    /// une période bornée (Mode Voyage ou intervalle manuel, voir
+    /// `LibraryScopeView`) affichait deux dates à la place du nom de la
+    /// source, ce qui se lisait comme une anomalie plutôt que comme un repère.
     var displayName: String {
         switch self {
         case .folder(let url, _): return url.lastPathComponent
         case .album(_, let title): return title
-        case .library(let scope): return scope.displayName
+        case .library: return String(localized: "Photothèque")
         }
     }
 
@@ -114,22 +118,6 @@ enum LibraryScope: Hashable {
         }
     }
 
-    /// Titre de la grille (orientation) : la période dit ce qu'on regarde.
-    var displayName: String {
-        switch self {
-        case .all:
-            return String(localized: "Toutes les photos")
-        case .lastDays(let days):
-            return String(localized: "\(days) derniers jours")
-        case .range(let start, let end):
-            let from = start.formatted(date: .abbreviated, time: .omitted)
-            guard let end else {
-                return String(localized: "Depuis le \(from)")
-            }
-            return "\(from) – \(end.formatted(date: .abbreviated, time: .omitted))"
-        }
-    }
-
     // MARK: - Persistance (restauration au lancement)
 
     var storageValue: String {
@@ -187,16 +175,6 @@ enum FolderKind: String, Hashable, Codable {
         case .externalDrive: return "externaldrive"
         case .icloud: return "icloud"
         case .local: return "folder"
-        }
-    }
-
-    /// Libellé de support pour la provenance par photo (viewer, Batch H5 ⑥).
-    var label: String {
-        switch self {
-        case .cameraCard: return String(localized: "Carte SD")
-        case .externalDrive: return String(localized: "Disque")
-        case .icloud: return "iCloud"
-        case .local: return String(localized: "Dossier")
         }
     }
 

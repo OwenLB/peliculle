@@ -86,7 +86,7 @@ enum PhotoLibrarySource {
             )
             var albums: [AlbumInfo] = []
             collections.enumerateObjects { collection, _, _ in
-                let assets = PHAsset.fetchAssets(in: collection, options: Self.imagesOnly)
+                let assets = PHAsset.fetchAssets(in: collection, options: Self.allMedia)
                 // On n'affiche pas les albums vides : ils n'apportent rien comme
                 // source de tri, et écartent le bruit d'albums hérités (structures
                 // de culling « étoiles / rejected / flagged / exported »
@@ -148,14 +148,23 @@ enum PhotoLibrarySource {
         }
     }
 
-    private static var imagesOnly: PHFetchOptions {
+    private static var allMedia: PHFetchOptions {
         fetchOptions(scope: .all)
     }
 
+    /// Photos **et** vidéos (idée 18). Un iPhone mélange les deux dans la même
+    /// journée : une passe de tri qui écarte les clips laisse justement
+    /// derrière elle ce qui pèse le plus lourd. Le prédicat reste explicite
+    /// plutôt qu'absent — il continue d'écarter l'audio seul et tout type que
+    /// PhotoKit ajouterait plus tard.
     private static func fetchOptions(scope: LibraryScope) -> PHFetchOptions {
         let options = PHFetchOptions()
         var predicates = [
-            NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
+            NSPredicate(
+                format: "mediaType = %d OR mediaType = %d",
+                PHAssetMediaType.image.rawValue,
+                PHAssetMediaType.video.rawValue
+            )
         ]
         let bounds = scope.fetchBounds
         if let start = bounds.start {
