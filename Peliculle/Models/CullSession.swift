@@ -380,12 +380,14 @@ final class CullSession {
         let decision = item.decision
         let rating = item.rating
         let isReference = item.isReference
+        let inDestinationAlbum = item.inDestinationAlbum
         if let libSlot = slots.first(where: { if case .library = $0.source { return true }; return false }) {
             libSlot.store.upsertRecord(
                 assetLocalIdentifier: assetID,
                 decision: decision,
                 rating: rating,
-                isReference: isReference
+                isReference: isReference,
+                inDestinationAlbum: inDestinationAlbum
             )
             return
         }
@@ -395,7 +397,8 @@ final class CullSession {
                 assetLocalIdentifier: assetID,
                 decision: decision,
                 rating: rating,
-                isReference: isReference
+                isReference: isReference,
+                inDestinationAlbum: inDestinationAlbum
             )
         }
     }

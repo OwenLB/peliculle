@@ -494,6 +494,16 @@
         }
       }
     },
+    "%lld photo(s) enregistrée(s), mais pas ajoutée(s) à l'album « %@ » (accès photothèque limité)." : {
+      "localizations" : {
+        "fr" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld photo(s) enregistrée(s), mais pas ajoutée(s) à l'album « %2$@ » (accès photothèque limité)."
+          }
+        }
+      }
+    },
     "%lld photo(s) ici" : {
       "localizations" : {
         "en" : {
@@ -1078,6 +1088,9 @@
         }
       }
     },
+    "Afficher l'orientation" : {
+
+    },
     "Afficher la note" : {
       "localizations" : {
         "en" : {
@@ -1109,7 +1122,7 @@
         }
       }
     },
-    "Ajoute d'un coup les %lld gardée(s) du voyage encore absentes de l'album. N'en retire jamais." : {
+    "Ajoute d'un coup les %lld gardée(s) encore absentes de l'album. N'en retire jamais." : {
 
     },
     "Ajouter" : {
@@ -1186,6 +1199,7 @@
       }
     },
     "Album" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1517,6 +1531,7 @@
       }
     },
     "Carte SD" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1621,6 +1636,9 @@
         }
       }
     },
+    "Copiée dans la pellicule" : {
+
+    },
     "Croissant" : {
 
     },
@@ -1628,6 +1646,9 @@
 
     },
     "Dans l'album" : {
+
+    },
+    "Dans l'album de destination" : {
 
     },
     "Daté" : {
@@ -1694,7 +1715,11 @@
     "Décroissant" : {
 
     },
+    "Déjà dans la pellicule" : {
+
+    },
     "Déjà enregistrée dans la pellicule" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1781,9 +1806,6 @@
         }
       }
     },
-    "Disque" : {
-
-    },
     "Disque externe" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1796,6 +1818,7 @@
       }
     },
     "Dossier" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2051,6 +2074,12 @@
           }
         }
       }
+    },
+    "Enregistrer les gardées" : {
+
+    },
+    "Enregistrer les gardées (%lld)" : {
+
     },
     "Espace insuffisant sur l'iPhone : %@ à enregistrer, %@ disponibles. Libérez de l'espace puis réessayez — rien n'a été enregistré." : {
       "localizations" : {
@@ -2853,6 +2882,9 @@
         }
       }
     },
+    "Plus" : {
+
+    },
     "Plus tard" : {
       "localizations" : {
         "en" : {
@@ -3287,12 +3319,6 @@
           }
         }
       }
-    },
-    "Synchroniser l'album" : {
-
-    },
-    "Synchroniser les gardées (%lld)" : {
-
     },
     "Taille" : {
       "localizations" : {

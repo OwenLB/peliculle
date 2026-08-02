@@ -13,6 +13,9 @@ struct WelcomeView: View {
     var notice: String?
     var recentFolders: [RecentFolder] = []
     var recentAlbums: [RecentAlbum] = []
+    /// Sessions combinées mémorisées (retour Owen — « Reprendre » n'offrait
+    /// qu'une source à la fois, jamais une composition entière).
+    var recentCombos: [RecentCombo] = []
     var onPick: () -> Void
     var onPickAlbum: () -> Void
     var onPickLibrary: () -> Void
@@ -22,6 +25,7 @@ struct WelcomeView: View {
     /// Retrait d'une entrée de l'historique (bouton « Modifier » ou swipe).
     var onDeleteRecentFolder: (RecentFolder) -> Void = { _ in }
     var onDeleteRecentAlbum: (RecentAlbum) -> Void = { _ in }
+    var onDeleteRecentCombo: (RecentCombo) -> Void = { _ in }
 
     @State private var isEditingRecents = false
 
@@ -77,7 +81,7 @@ struct WelcomeView: View {
             .frame(maxWidth: 320)
             .padding(.top, 8)
 
-            if !recentFolders.isEmpty || !recentAlbums.isEmpty {
+            if !recentFolders.isEmpty || !recentAlbums.isEmpty || !recentCombos.isEmpty {
                 resumeSection
             }
 
@@ -132,10 +136,21 @@ struct WelcomeView: View {
                     onDelete: { onDeleteRecentAlbum(album) }
                 )
             }
+            // Combinés en dernier : les recours à une source unique restent
+            // le cas le plus fréquent, la composition un cas plus rare.
+            ForEach(recentCombos) { combo in
+                ResumeRow(
+                    name: combo.displayName,
+                    icon: "arrow.triangle.merge",
+                    isEditing: isEditingRecents,
+                    onOpen: { onOpenRecent(.recentCombo(combo)) },
+                    onDelete: { onDeleteRecentCombo(combo) }
+                )
+            }
         }
         .frame(maxWidth: 360)
         // Plus rien à éditer : on sort du mode pour ne pas rouvrir « OK » à vide.
-        .onChange(of: recentFolders.count + recentAlbums.count) { _, total in
+        .onChange(of: recentFolders.count + recentAlbums.count + recentCombos.count) { _, total in
             if total == 0 { isEditingRecents = false }
         }
     }

@@ -9,6 +9,18 @@ func photoCountText(_ count: Int) -> String {
         : String(localized: "\(count) photo")
 }
 
+/// Libellé d'un ensemble de sources — pilule de la grille (`GridView`) et
+/// entrée « Reprendre » d'une session combinée (`RecentCombo`). Une source :
+/// son nom. Deux : les deux noms (« Carte SD + Vacances »). Au-delà, les noms
+/// ne tiennent plus et n'apprennent rien — un décompte (« 3 sources »).
+func combinedSourceLabel(_ names: [String]) -> String {
+    switch names.count {
+    case 1: return names[0]
+    case 2: return names.joined(separator: " + ")
+    default: return String(localized: "\(names.count) sources")
+    }
+}
+
 /// Jalon 10 (idée 17) — la provenance des photos d'une session. **Une source
 /// à la fois, jamais de fusion** : changer de source clôt la session courante
 /// (flush de la persistance) et en ouvre une neuve. Le workflow entier
@@ -239,6 +251,11 @@ enum SourceRequest {
     case album(id: String, title: String)
     /// Rouvrir un dossier récent via son bookmark (entrée « récents »).
     case recentFolder(RecentFolder)
+    /// Rouvrir une session combinée mémorisée (entrée « récents », Reprendre) :
+    /// la source primaire remplace la session courante, les autres membres la
+    /// rejoignent ensuite (même résultat qu'une composition manuelle au hub
+    /// Sources, en un seul tap).
+    case recentCombo(RecentCombo)
     /// Clore la session et revenir à l'écran d'accueil (sélecteur de source
     /// plein écran) — la dernière source reste mémorisée pour le relancement.
     case welcome
@@ -311,6 +328,54 @@ struct RecentFolder: Codable, Identifiable, Equatable {
     }
 
     static func remove(id: String, in list: inout [RecentFolder]) {
+        RecentList.remove(id: id, from: &list, key: storageKey)
+    }
+}
+
+/// Session **combinée** mémorisée (Batch H5+, retour Owen — « Reprendre »
+/// n'offrait qu'une source à la fois) : combiner plusieurs sources est un
+/// geste volontaire au hub Sources, sans ceci y revenir depuis l'accueil
+/// demandait de rouvrir la source primaire puis de rajouter les autres une à
+/// une. Chaque membre référence une entrée « récents » existante (dossier via
+/// son chemin, album via son id — résolue à l'ouverture) ou une source
+/// photothèque autonome (période), qui ne demande aucun bookmark.
+struct RecentCombo: Codable, Identifiable, Equatable {
+    enum Member: Codable, Equatable {
+        case folder(path: String)
+        case album(id: String)
+        case library(String)
+    }
+
+    /// Ordre d'ouverture : le premier remplace la session, les suivants la
+    /// rejoignent (`ContentView.openCombo`).
+    let members: [Member]
+    /// Noms au moment de l'enregistrement — l'affichage reste stable même si
+    /// l'entrée « récents » d'un membre disparaît ensuite de l'historique.
+    let names: [String]
+
+    var displayName: String { combinedSourceLabel(names) }
+
+    var id: String {
+        members.map { member in
+            switch member {
+            case .folder(let path): return "folder|\(path)"
+            case .album(let id): return "album|\(id)"
+            case .library(let value): return "library|\(value)"
+            }
+        }.joined(separator: "¦")
+    }
+
+    private static let storageKey = "peliculle.recentCombos"
+
+    static func load() -> [RecentCombo] {
+        RecentList.load(key: storageKey)
+    }
+
+    static func record(_ combo: RecentCombo, in list: inout [RecentCombo]) {
+        RecentList.record(combo, in: &list, key: storageKey, limit: 5)
+    }
+
+    static func remove(id: String, in list: inout [RecentCombo]) {
         RecentList.remove(id: id, from: &list, key: storageKey)
     }
 }

@@ -12,11 +12,12 @@ import SwiftUI
 struct TripSettingsView: View {
     @Bindable var session: CullSession
 
-    /// Nombre de gardées du voyage encore absentes de l'album — alimente le
-    /// bouton « Synchroniser » et sert de garde à sa visibilité. 0 (défaut) =
-    /// entrée masquée : les appelants sans de quoi la câbler (⚙️ Réglages,
-    /// qui n'a pas les dérivés de la grille) ne l'affichent tout simplement
-    /// pas, plutôt qu'un bouton inerte.
+    /// Nombre de gardées encore absentes de l'album (bornées au voyage s'il y
+    /// en a un actif) — alimente le bouton « Enregistrer les gardées » et
+    /// sert de garde à sa visibilité. 0 (défaut) = entrée masquée : les
+    /// appelants sans de quoi la câbler (⚙️ Réglages, qui n'a pas les dérivés
+    /// de la grille) ne l'affichent tout simplement pas, plutôt qu'un bouton
+    /// inerte.
     var syncableCount = 0
     /// Lance la synchronisation — le calcul (cible, flux d'enregistrement,
     /// progression, toast) vit côté grille. Défaut inerte.
@@ -32,10 +33,10 @@ struct TripSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // « Synchroniser l'album » : range d'un coup les gardées du
-                // voyage pas encore dans l'album (additif — voir ROADMAP).
-                // En tête du drawer, c'est l'action du voyage la plus
-                // fréquente ; masquée quand il n'y a rien à ranger.
+                // « Enregistrer les gardées » : range d'un coup les gardées
+                // pas encore dans l'album (additif — voir ROADMAP). En tête
+                // du drawer, c'est l'action la plus fréquente ; masquée quand
+                // il n'y a rien à ranger.
                 if syncableCount > 0 {
                     Section {
                         Button {
@@ -44,18 +45,18 @@ struct TripSettingsView: View {
                         } label: {
                             Label {
                                 HStack {
-                                    Text("Synchroniser l'album")
+                                    Text("Enregistrer les gardées")
                                     Spacer()
                                     Text("\(syncableCount)")
                                         .foregroundStyle(.secondary)
                                         .monospacedDigit()
                                 }
                             } icon: {
-                                Image(systemName: "arrow.triangle.2.circlepath")
+                                Image(systemName: "square.and.arrow.down.on.square")
                             }
                         }
                     } footer: {
-                        Text("Ajoute d'un coup les \(syncableCount) gardée(s) du voyage encore absentes de l'album. N'en retire jamais.")
+                        Text("Ajoute d'un coup les \(syncableCount) gardée(s) encore absentes de l'album. N'en retire jamais.")
                     }
                 }
                 Section {

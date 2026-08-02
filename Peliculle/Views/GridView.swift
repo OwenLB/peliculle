@@ -44,6 +44,8 @@ struct GridView: View {
     @State private var destinationAlbumIDs: Set<String> = []
     /// Idée 12 — sections par jour de prise de vue dans la grille.
     @AppStorage("groupByDay") private var groupByDay = false
+    /// Masque/affiche le badge d'orientation des cellules (menu Affichage).
+    @AppStorage("showOrientationBadge") private var showOrientationBadge = true
     /// Revue UX (UX5) — les filtres et les réglages vivent en sheets, plus
     /// en menus de toolbar (voir `FilterSheet` / `SettingsSheet`).
     @State private var showFilters = false
@@ -68,6 +70,12 @@ struct GridView: View {
 
     @State private var saveProgress: (done: Int, total: Int)?
     @State private var saveMessage: String?
+    /// Vrai quand `saveMessage` vient d'un accès photothèque insuffisant
+    /// (`SaveFlow.Outcome.offersSettingsShortcut`) : l'alerte propose alors
+    /// Réglages plutôt qu'un simple OK. Sans rapport avec `DeleteFlow`, qui
+    /// partage la même alerte mais jamais ce cas — remis à faux à chacun de
+    /// ses messages pour ne pas laisser une valeur périmée.
+    @State private var saveMessageOffersSettings = false
     /// Revue UX (UX4) — les **succès** passent par un toast qui s'efface
     /// seul (`successToast(message:)`) ; `saveMessage` ne porte plus que
     /// les erreurs, qui restent en alertes.
@@ -88,6 +96,7 @@ struct GridView: View {
     /// Idée 23 — ② : ne notifier la fin d'un enregistrement que si l'app
     /// n'est plus à l'écran quand il se termine.
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @State private var showExport = false
     @Namespace private var zoomNamespace
 
@@ -153,8 +162,9 @@ struct GridView: View {
         var lenses: [String] = []
         var hasGeolocated = false
         var hasUntriaged = false
-        /// Gardées du voyage pas encore dans l'album de destination : cible du
-        /// bouton « Synchroniser » (drawer Voyage + menu ⋯ de sélection).
+        /// Gardées pas encore dans l'album de destination (bornées au voyage
+        /// s'il y en a un actif) : cible du bouton « Enregistrer les
+        /// gardées » (barre principale, drawer Voyage, menu ⋯ de sélection).
         var syncableKeepers: [PhotoItem] = []
     }
 
@@ -241,14 +251,14 @@ struct GridView: View {
         derived.hasUntriaged = session.items.contains {
             session.tripMatches($0) && $0.decision == .undecided
         }
-        // « Synchroniser » — gardées du voyage encore absentes de l'album.
+        // « Enregistrer les gardées » — gardées encore absentes de l'album,
+        // bornées au voyage s'il y en a un actif (`tripMatches` ne filtre
+        // rien hors voyage, donc ce calcul reste correct dans les deux cas).
         // Additif : on ne retire jamais de l'album (voir ROADMAP, dette /
         // à tester). Dépend de la révision, du voyage et de l'album sondé
         // (`destinationAlbumIDs`) — tous trois dans la clé du cache, donc
         // recalculé exactement quand il le faut, jamais par simple rendu.
-        derived.syncableKeepers = session.trip.isActive
-            ? session.keepers.filter { session.tripMatches($0) && !isSaved($0) }
-            : []
+        derived.syncableKeepers = session.keepers.filter { session.tripMatches($0) && !isSaved($0) }
     }
 
     private func matchesFilter(_ item: PhotoItem) -> Bool {
@@ -373,8 +383,9 @@ struct GridView: View {
     /// passe de `body`.
     private var hasUntriaged: Bool { derived.hasUntriaged }
 
-    /// Gardées du voyage encore absentes de l'album (photographie du rendu) —
-    /// cible du bouton « Synchroniser », partagée par le drawer Voyage et le
+    /// Gardées encore absentes de l'album, bornées au voyage s'il y en a un
+    /// actif (photographie du rendu) — cible du bouton « Enregistrer les
+    /// gardées », partagée par la barre principale, le drawer Voyage et le
     /// menu ⋯ de sélection.
     private var syncableKeepers: [PhotoItem] { derived.syncableKeepers }
 
@@ -664,6 +675,14 @@ struct GridView: View {
             }
         }
         .alert("Peliculle", isPresented: Binding(isPresenting: $saveMessage)) {
+            if saveMessageOffersSettings {
+                Button("Réglages") {
+                    saveMessage = nil
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                }
+            }
             Button("OK", role: .cancel) { saveMessage = nil }
         } message: {
             Text(saveMessage ?? "")
@@ -814,6 +833,7 @@ struct GridView: View {
                 sort: $sort,
                 sortAscending: $sortAscending,
                 groupByDay: $groupByDay,
+                showOrientationBadge: $showOrientationBadge,
                 filters: $filters,
                 availableFormats: derived.availableFormats,
                 cameras: derived.cameras,
@@ -858,7 +878,7 @@ struct GridView: View {
             TripSettingsView(
                 session: session,
                 syncableCount: syncableKeepers.count,
-                onSync: { Task { await syncTripKeepers() } }
+                onSync: { Task { await saveAllKeepers() } }
             )
         }
         // Idée 23 — ③ : le voyage change (activation, édition, fin) → le
@@ -896,7 +916,8 @@ struct GridView: View {
             ThumbnailCell(
                 item: item,
                 isSelecting: isSelecting,
-                isSelected: selection.contains(item.id)
+                isSelected: selection.contains(item.id),
+                showOrientation: showOrientationBadge
             )
         }
         .buttonStyle(.plain)
@@ -932,11 +953,22 @@ struct GridView: View {
 
     // MARK: - Menus contextuels (Revue UX, UX1)
 
-    /// Actions d'appui long d'une photo : décision, note, enregistrement,
-    /// suppression — les mêmes verbes que le viewer et la sélection, jamais
-    /// de nouvelle capacité.
+    /// Actions d'appui long d'une photo : sélection, décision, note,
+    /// partage, enregistrement, suppression — les mêmes verbes que le viewer
+    /// et la sélection, jamais de nouvelle capacité.
     @ViewBuilder
     private func photoContextMenu(for item: PhotoItem) -> some View {
+        // Entrée dans le mode sélection avec cette photo déjà cochée —
+        // en premier, façon Photos.app : c'est le geste le plus direct pour
+        // partir d'une photo et construire un sous-ensemble autour d'elle.
+        Section {
+            Button {
+                isSelecting = true
+                selection = [item.id]
+            } label: {
+                Label("Sélectionner", systemImage: "checkmark.circle")
+            }
+        }
         Section {
             Button {
                 session.setDecision(.keep, for: [item])
@@ -987,6 +1019,24 @@ struct GridView: View {
             .pickerStyle(.palette)
         }
         Section {
+            // Partager : les deux sources, même mécanique que le viewer
+            // (`PhotoSharing`) — un fichier a une URL toute prête, un asset
+            // photothèque se prépare de façon asynchrone.
+            if let url = item.url {
+                ShareLink(item: url) {
+                    Label("Partager", systemImage: "square.and.arrow.up")
+                }
+            } else {
+                Button {
+                    Task {
+                        let items = await PhotoSharing.libraryItems(for: item)
+                        guard !items.isEmpty else { return }
+                        PhotoSharing.present(items)
+                    }
+                } label: {
+                    Label("Partager", systemImage: "square.and.arrow.up")
+                }
+            }
             Button {
                 Task { await save([item]) }
             } label: {
@@ -1064,13 +1114,14 @@ struct GridView: View {
                     // Chevron permanent : la pilule est le repère **et** l'entrée
                     // du hub « Sources » (la toolbar n'a plus de menu de sources).
                     Image(systemName: "chevron.down")
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .font(.footnote)
+                .font(.subheadline)
                 .lineLimit(1)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .contentShape(.rect)
                 .glassEffect()
             }
             .buttonStyle(.plain)
@@ -1114,12 +1165,7 @@ struct GridView: View {
     /// et n'apprennent rien — un décompte (« 3 sources ») ; le détail vit dans
     /// le hub d'un tap.
     private var sourceLabel: String {
-        let names = session.sources.map(\.displayName)
-        switch names.count {
-        case 1: return names[0]
-        case 2: return names.joined(separator: " + ")
-        default: return String(localized: "\(names.count) sources")
-        }
+        combinedSourceLabel(session.sources.map(\.displayName))
     }
 
     private var selectionTitle: String {
@@ -1194,36 +1240,68 @@ struct GridView: View {
                 selectionMoreMenu
             }
         } else {
-            // Batch H5 — plus de menu de sources ici : une simple icône qui
-            // ouvre le hub « Sources » (voir / changer / ajouter / retirer).
-            // Icône « pile de sources » (générique, pas celle d'un support) ;
-            // la pilule fait le même geste.
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    onChangeSource(.manage)
-                } label: {
-                    Label("Sources", systemImage: "square.stack.3d.up")
+            // Batch H5 — Sources / Filtrer / Réglages, **repliés en un seul
+            // menu** quand la droite est chargée (Mode Voyage actif : badge
+            // Voyage + Annuler + Sélectionner, potentiellement + Enregistrer
+            // les gardées — jusqu'à 4 items, le système bascule alors le
+            // trop-plein dans un « ⋯ » qu'on ne contrôle pas, ce qu'on veut
+            // justement éviter). Hors Mode Voyage, la droite tient large,
+            // les trois retrouvent leur place normale en icônes séparées.
+            if session.trip.isActive {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button {
+                            onChangeSource(.manage)
+                        } label: {
+                            Label("Sources", systemImage: "square.stack.3d.up")
+                        }
+                        Button {
+                            showFilters = true
+                        } label: {
+                            Label(
+                                "Filtrer",
+                                systemImage: isFiltering
+                                    ? "line.3.horizontal.decrease.circle.fill"
+                                    : "line.3.horizontal.decrease.circle"
+                            )
+                        }
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Label("Réglages", systemImage: "gearshape")
+                        }
+                    } label: {
+                        Label("Plus", systemImage: "ellipsis.circle")
+                    }
                 }
-            }
-            // Revue UX (UX5) — filtres et réglages en sheets : l'icône
-            // pleine signale un filtre actif (comme l'ancien menu).
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    showFilters = true
-                } label: {
-                    Label(
-                        "Filtrer",
-                        systemImage: isFiltering
-                            ? "line.3.horizontal.decrease.circle.fill"
-                            : "line.3.horizontal.decrease.circle"
-                    )
+            } else {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        onChangeSource(.manage)
+                    } label: {
+                        Label("Sources", systemImage: "square.stack.3d.up")
+                    }
                 }
-            }
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    showSettings = true
-                } label: {
-                    Label("Réglages", systemImage: "gearshape")
+                // Revue UX (UX5) — filtres et réglages en sheets : l'icône
+                // pleine signale un filtre actif (comme l'ancien menu).
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showFilters = true
+                    } label: {
+                        Label(
+                            "Filtrer",
+                            systemImage: isFiltering
+                                ? "line.3.horizontal.decrease.circle.fill"
+                                : "line.3.horizontal.decrease.circle"
+                        )
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Label("Réglages", systemImage: "gearshape")
+                    }
                 }
             }
             // Statut Mode Voyage : n'apparaît que quand un voyage borne
@@ -1232,6 +1310,24 @@ struct GridView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Mode Voyage", systemImage: "airplane.circle.fill") {
                         showTripSettings = true
+                    }
+                }
+            }
+            // Enregistrer toutes les gardées, visible **partout** dès qu'il y
+            // en a — plus besoin d'entrer en sélection ou d'ouvrir le drawer
+            // Voyage pour la trouver (retour Owen : trois libellés différents
+            // pour la même idée — « Synchroniser », « Ajouter à l'album »,
+            // « Enregistrer » — se lisaient comme incohérents). Même action
+            // que la barre de sélection et le drawer Voyage (`saveAllKeepers`).
+            if !syncableKeepers.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await saveAllKeepers() }
+                    } label: {
+                        Label(
+                            "Enregistrer les gardées (\(syncableKeepers.count))",
+                            systemImage: "square.and.arrow.down.on.square"
+                        )
                     }
                 }
             }
@@ -1316,22 +1412,22 @@ struct GridView: View {
                 }
                 .disabled(selectedItems.allSatisfy { $0.url == nil })
             }
-            // Synchroniser l'album du voyage — action **globale** (comme la
+            // Enregistrer toutes les gardées — action **globale** (comme la
             // purge des rejetées ci-dessous), indépendante de la sélection :
-            // deux mots proches (« Garder » la sélection / « Synchroniser »)
-            // ne doivent pas porter sur le même périmètre. Visible seulement
-            // en Mode Voyage. Additif — n'ajoute que les gardées absentes.
-            if session.trip.isActive {
+            // deux mots proches (« Garder » la sélection / « Enregistrer les
+            // gardées ») ne doivent pas porter sur le même périmètre.
+            // Toujours visible (bornée au voyage s'il y en a un actif) ;
+            // additif — n'ajoute que les gardées absentes de l'album.
+            if !syncableKeepers.isEmpty {
                 Section {
                     Button {
-                        Task { await syncTripKeepers() }
+                        Task { await saveAllKeepers() }
                     } label: {
                         Label(
-                            "Synchroniser les gardées (\(syncableKeepers.count))",
-                            systemImage: "arrow.triangle.2.circlepath"
+                            "Enregistrer les gardées (\(syncableKeepers.count))",
+                            systemImage: "square.and.arrow.down.on.square"
                         )
                     }
-                    .disabled(syncableKeepers.isEmpty)
                 }
             }
             Section {
@@ -1371,7 +1467,10 @@ struct GridView: View {
     /// sélection, le menu contextuel (Revue UX, UX1) et le viewer.
     private func deleteItems(_ items: [PhotoItem]) async {
         let outcome = await DeleteFlow.run(items, session: session)
-        if let message = outcome.errorMessage { saveMessage = message }
+        if let message = outcome.errorMessage {
+            saveMessageOffersSettings = false
+            saveMessage = message
+        }
     }
 
     /// Purge de fin de tri : supprime de la carte toutes les rejetées.
@@ -1382,6 +1481,7 @@ struct GridView: View {
         // Revue UX (UX4) — même partage que l'enregistrement : succès en
         // toast, échec en alerte.
         if let message = outcome.errorMessage {
+            saveMessageOffersSettings = false
             saveMessage = message
         } else if session.hasFileSource && session.hasLibrarySource {
             successToast = String(localized: "\(outcome.deleted.count) rejetée(s) supprimée(s)")
@@ -1483,6 +1583,7 @@ struct GridView: View {
         // que le filtre « dans l'album » dise vrai tout de suite.
         await refreshDestinationAlbumIDs()
         successToast = outcome.successToast
+        saveMessageOffersSettings = outcome.offersSettingsShortcut
         saveMessage = outcome.errorMessage
     }
 
@@ -1597,15 +1698,15 @@ struct GridView: View {
         .accessibilityLabel("Lot de similaires \(lot), \(count) photos — départager")
     }
 
-    /// « Synchroniser l'album du voyage » : enregistre d'un coup les gardées
-    /// du voyage pas encore rangées (fichiers carte → copie pellicule +
-    /// album, assets → ajout album). **Additif** : ne retire jamais de
-    /// l'album une photo dé-gardée (voir ROADMAP, dette / à tester). Réutilise
-    /// tout le flux d'enregistrement (garde-fou album au premier coup,
-    /// progression, toast, re-sondage de l'appartenance). Point d'entrée
-    /// unique du drawer Voyage et du menu ⋯ de sélection ; l'appelant lit la
-    /// cible via `syncableKeepers` pour le compte.
-    private func syncTripKeepers() async {
+    /// « Enregistrer les gardées » : enregistre d'un coup toutes les gardées
+    /// pas encore rangées (fichiers carte → copie pellicule + album, assets →
+    /// ajout album), bornées au voyage s'il y en a un actif. **Additif** : ne
+    /// retire jamais de l'album une photo dé-gardée (voir ROADMAP, dette / à
+    /// tester). Réutilise tout le flux d'enregistrement (garde-fou album au
+    /// premier coup, progression, toast, re-sondage de l'appartenance). Point
+    /// d'entrée unique du drawer Voyage et du menu ⋯ de sélection ; l'appelant
+    /// lit la cible via `syncableKeepers` pour le compte.
+    private func saveAllKeepers() async {
         await save(syncableKeepers)
     }
 }

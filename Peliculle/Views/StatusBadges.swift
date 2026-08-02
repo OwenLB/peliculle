@@ -6,16 +6,46 @@ import SwiftUI
 /// rejetée = croix rouge, note = étoile jaune sur capsule sombre.
 /// Pur statut, jamais des actions.
 
-/// « Déjà enregistrée dans la pellicule » (cette session).
+/// « Déjà dans la pellicule » — soit **copiée** depuis une source externe
+/// (carte, dossier), soit **native** photothèque (elle y était déjà, par
+/// construction). Affichée dans les deux cas : le vide d'une vignette externe
+/// pas encore enregistrée doit rester distinguable d'une photo photothèque,
+/// qui elle n'a jamais rien à faire ici.
 struct SavedBadge: View {
     var font: Font = .body
+    /// Vrai pour une photo photothèque (toujours vraie par construction),
+    /// faux pour une copie fraîche depuis une source externe. Ne change que
+    /// la teinte — même icône, même libellé de base — un écart volontairement
+    /// **discret**, pas deux couleurs franches.
+    var native = false
+
+    private var tint: Color {
+        native ? Color(red: 0.05, green: 0.36, blue: 0.74) : .blue
+    }
 
     var body: some View {
         Image(systemName: "arrow.down.circle.fill")
             .font(font)
-            .foregroundStyle(.white, .blue)
+            .foregroundStyle(.white, tint)
             .shadow(radius: 2)
-            .accessibilityLabel("Déjà enregistrée dans la pellicule")
+            .accessibilityLabel(native
+                ? String(localized: "Déjà dans la pellicule")
+                : String(localized: "Copiée dans la pellicule"))
+    }
+}
+
+/// Appartenance **actuelle** à l'album de destination — distincte
+/// d'« enregistrée » (voir `SavedBadge`) : une photo peut être dans la
+/// pellicule sans être (ou plus être) rangée dans l'album de la session.
+struct AlbumBadge: View {
+    var font: Font = .body
+
+    var body: some View {
+        Image(systemName: "rectangle.stack.badge.checkmark")
+            .font(font)
+            .foregroundStyle(.white, .teal)
+            .shadow(radius: 2)
+            .accessibilityLabel("Dans l'album de destination")
     }
 }
 

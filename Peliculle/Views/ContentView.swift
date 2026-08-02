@@ -32,6 +32,7 @@ struct ContentView: View {
     @State private var notice: String?
     @State private var recentAlbums = RecentAlbum.load()
     @State private var recentFolders = RecentFolder.load()
+    @State private var recentCombos = RecentCombo.load()
     /// Vraie pendant une restauration de source : un tap de notification
     /// arrivé pendant la restauration automatique du lancement ne doit pas
     /// en déclencher une seconde en parallèle.
@@ -79,12 +80,14 @@ struct ContentView: View {
                         notice: notice,
                         recentFolders: recentFolders,
                         recentAlbums: recentAlbums,
+                        recentCombos: recentCombos,
                         onPick: { handle(.folder) },
                         onPickAlbum: { handle(.albumPicker) },
                         onPickLibrary: { handle(.library) },
                         onOpenRecent: handle(_:),
                         onDeleteRecentFolder: deleteRecentFolder,
-                        onDeleteRecentAlbum: deleteRecentAlbum
+                        onDeleteRecentAlbum: deleteRecentAlbum,
+                        onDeleteRecentCombo: deleteRecentCombo
                     )
                 }
             }
@@ -179,6 +182,12 @@ struct ContentView: View {
         // une carte à une session photothèque doit (re)lancer la surveillance.
         .task(id: session?.sources) {
             await monitorCardConnection()
+        }
+        // Retour Owen — « Reprendre » n'offrait qu'une source à la fois :
+        // toute composition (hub Sources) se mémorise pour y revenir en un tap.
+        .onChange(of: session?.sources) { _, sources in
+            guard let sources else { return }
+            recordCombo(sources)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -315,6 +324,9 @@ struct ContentView: View {
                 if adding { await addRecentFolder(recent) }
                 else { await openRecentFolder(recent) }
             }
+        case .recentCombo(let combo):
+            notice = nil
+            Task { await openCombo(combo) }
         case .welcome:
             // Retour à l'accueil : clore proprement (persistance flushée,
             // scope de la carte relâché). La dernière source reste mémorisée
@@ -432,6 +444,28 @@ struct ContentView: View {
         withAnimation { RecentAlbum.remove(id: album.id, in: &recentAlbums) }
     }
 
+    private func deleteRecentCombo(_ combo: RecentCombo) {
+        withAnimation { RecentCombo.remove(id: combo.id, in: &recentCombos) }
+    }
+
+    /// Mémorise la composition courante dès qu'elle dépasse une source —
+    /// combiner en reste un (une seule source ne mérite pas d'entrée
+    /// « Reprendre » dédiée, le récent simple s'en charge déjà).
+    private func recordCombo(_ sources: [PhotoSource]) {
+        guard sources.count > 1 else { return }
+        let combo = RecentCombo(
+            members: sources.map { source in
+                switch source {
+                case .folder(let url, _): return .folder(path: url.path)
+                case .album(let id, _): return .album(id: id)
+                case .library(let scope): return .library(scope.storageValue)
+                }
+            },
+            names: sources.map(\.displayName)
+        )
+        RecentCombo.record(combo, in: &recentCombos)
+    }
+
     private func addRecentFolder(_ recent: RecentFolder) async {
         guard let url = await resolveFolderBookmark(recent) else {
             notice = String(localized: "Carte non retrouvée — resélectionnez le dossier.")
@@ -499,6 +533,49 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Reprise d'une session combinée (accueil « Reprendre »)
+
+    /// Rouvre une composition mémorisée : le premier membre remplace la
+    /// session (comme un récent simple), les suivants la rejoignent — même
+    /// résultat qu'une composition manuelle au hub Sources. Un membre devenu
+    /// introuvable (récent supprimé entretemps) est silencieusement ignoré,
+    /// le reste de la composition se rejoint quand même.
+    private func openCombo(_ combo: RecentCombo) async {
+        guard let first = combo.members.first else { return }
+        await openComboMember(first)
+        for member in combo.members.dropFirst() {
+            await addComboMember(member)
+        }
+    }
+
+    private func openComboMember(_ member: RecentCombo.Member) async {
+        switch member {
+        case .folder(let path):
+            guard let recent = recentFolders.first(where: { $0.path == path }) else { return }
+            await openRecentFolder(recent)
+        case .album(let id):
+            guard let recent = recentAlbums.first(where: { $0.id == id }) else { return }
+            await openLibrarySource(.album(id: recent.id, title: recent.title))
+        case .library(let storageValue):
+            guard let scope = LibraryScope.fromStorage(storageValue) else { return }
+            await openLibrarySource(.library(scope))
+        }
+    }
+
+    private func addComboMember(_ member: RecentCombo.Member) async {
+        switch member {
+        case .folder(let path):
+            guard let recent = recentFolders.first(where: { $0.path == path }) else { return }
+            await addRecentFolder(recent)
+        case .album(let id):
+            guard let recent = recentAlbums.first(where: { $0.id == id }) else { return }
+            await addLibrarySource(.album(id: recent.id, title: recent.title))
+        case .library(let storageValue):
+            guard let scope = LibraryScope.fromStorage(storageValue) else { return }
+            await addLibrarySource(.library(scope))
+        }
+    }
+
     /// Reprise de session : réapplique décisions, notes et état
     /// « enregistré » sauvegardés pour cette source (pour un dossier, les
     /// items scannés servent aussi de filet de récupération par contenu).
@@ -509,6 +586,7 @@ struct ContentView: View {
         lastSource = source.storageValue
         // Après l'assignation : la correction éventuelle vise le bon store.
         await reconcileSavedMarks(items)
+        await reconcileAlbumMembership(items)
     }
 
     /// Batch H5 — corrige le marquage « téléchargé » d'une copie carte dont
@@ -529,6 +607,30 @@ struct ContentView: View {
             changed = true
         }
         if changed { session?.persistSoon() }
+    }
+
+    /// Corrige `inDestinationAlbum` sur l'appartenance **réelle** à l'album de
+    /// destination — dans les deux sens : retirée depuis l'app Photos (badge
+    /// retiré) comme ajoutée depuis l'app Photos sans passer par Peliculle
+    /// (badge apparaît). Vaut pour les deux sources (externe via
+    /// `savedAssetID`, photothèque via l'asset lui-même) — au contraire de
+    /// `reconcileSavedMarks`, réservée aux copies fichier. Même garde-fou
+    /// (accès complet uniquement) ; rien à faire sans album de destination.
+    private func reconcileAlbumMembership(_ items: [PhotoItem]) async {
+        guard let session, let title = session.albumDestination.resolvedTitle,
+              PhotoLibrarySource.hasFullReadAccess else { return }
+        let members = await PhotoLibrarySource.assetIDs(inAlbumTitled: title)
+        var changed = false
+        for item in items {
+            let assetID = item.isLibraryBacked ? item.asset?.localIdentifier : item.savedAssetID
+            guard let assetID else { continue }
+            let isMember = members.contains(assetID)
+            if item.inDestinationAlbum != isMember {
+                item.inDestinationAlbum = isMember
+                changed = true
+            }
+        }
+        if changed { session.persistSoon() }
     }
 
     /// Changer de source = clore proprement la session courante : flush de la

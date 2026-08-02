@@ -144,6 +144,7 @@ enum PhotoSaver {
                 result.saved += pendingAlbumItems.count
                 for item in pendingAlbumItems {
                     item.savedToLibrary = true
+                    item.inDestinationAlbum = true
                 }
             } else {
                 // L'album n'a pas pu être créé/retrouvé : les copies de
@@ -209,12 +210,7 @@ enum PhotoSaver {
     /// stocker des identifiants : robuste même si l'utilisateur supprime
     /// l'album entre deux enregistrements.
     private static func album(titled title: String) async -> PHAssetCollection? {
-        let options = PHFetchOptions()
-        options.predicate = NSPredicate(format: "title = %@", title)
-        let existing = PHAssetCollection.fetchAssetCollections(
-            with: .album, subtype: .albumRegular, options: options
-        )
-        if let album = existing.firstObject { return album }
+        if let existing = existingAlbum(titled: title) { return existing }
 
         let placeholder = PlaceholderBox()
         try? await PHPhotoLibrary.shared().performChanges {
@@ -226,5 +222,55 @@ enum PhotoSaver {
         return PHAssetCollection.fetchAssetCollections(
             withLocalIdentifiers: [placeholderID], options: nil
         ).firstObject
+    }
+
+    /// Fetch **sans création** — au contraire de `album(titled:)`, ne doit
+    /// jamais faire naître un album vide juste pour constater qu'il n'y a
+    /// rien à en retirer.
+    private static func existingAlbum(titled title: String) -> PHAssetCollection? {
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "title = %@", title)
+        return PHAssetCollection.fetchAssetCollections(
+            with: .album, subtype: .albumRegular, options: options
+        ).firstObject
+    }
+
+    // MARK: - Retrait différé des rejetées (piste ROADMAP)
+
+    /// Retire de l'album de destination les photos **rejetées après avoir
+    /// été rangées** — jamais une suppression, seulement l'appartenance à
+    /// l'album (`PHAssetCollectionChangeRequest.removeAssets`). Appelé par
+    /// `SaveFlow` à **chaque** enregistrement/synchronisation, jamais au
+    /// moment du rejet lui-même : retirer un album est un effet de bord d'une
+    /// action explicite (enregistrer), pas du simple changement de décision.
+    ///
+    /// Best-effort et silencieux : sans accès complet ou si l'album a
+    /// disparu, on ne retire rien — retenté sans frais au prochain passage,
+    /// comme la réconciliation au lancement.
+    @MainActor
+    static func removeFromAlbum(_ items: [PhotoItem], albumTitle: String) async {
+        guard !items.isEmpty, PhotoLibrarySource.hasFullReadAccess,
+              let album = existingAlbum(titled: albumTitle) else { return }
+
+        var itemsByAssetID: [String: PhotoItem] = [:]
+        for item in items {
+            let assetID = item.isLibraryBacked ? item.asset?.localIdentifier : item.savedAssetID
+            guard let assetID else { continue }
+            itemsByAssetID[assetID] = item
+        }
+        guard !itemsByAssetID.isEmpty else { return }
+
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: Array(itemsByAssetID.keys), options: nil)
+        guard assets.count > 0 else { return }
+        do {
+            try await PHPhotoLibrary.shared().performChanges {
+                PHAssetCollectionChangeRequest(for: album)?.removeAssets(assets)
+            }
+            assets.enumerateObjects { asset, _, _ in
+                itemsByAssetID[asset.localIdentifier]?.inDestinationAlbum = false
+            }
+        } catch {
+            // Rien de retiré : on retentera au prochain enregistrement.
+        }
     }
 }

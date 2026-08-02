@@ -18,6 +18,13 @@ enum SaveFlow {
     struct Outcome {
         var successToast: String?
         var errorMessage: String?
+        /// Vrai quand l'empêchement vient d'un accès photothèque insuffisant
+        /// pour ranger en album (limité ou refusé). `PHPhotoLibrary.
+        /// requestAuthorization` ne réaffiche plus rien une fois un choix
+        /// déjà fait — seul un aller-retour par Réglages permet de passer en
+        /// accès complet. L'appelant propose alors ce raccourci plutôt qu'un
+        /// simple OK.
+        var offersSettingsShortcut = false
     }
 
     /// Enregistre le lot (copie pellicule pour un fichier, ajout à l'album
@@ -69,7 +76,25 @@ enum SaveFlow {
             for item in items {
                 session.mirrorToLibraryIfNeeded(item)
             }
-            outcome = Self.outcome(of: result, items: items)
+            // Retrait différé des rejetées déjà rangées — jamais au moment du
+            // rejet lui-même (un simple changement de décision ne doit rien
+            // déclencher), seulement ici, à chaque enregistrement ou
+            // synchronisation. Balayé sur **toute la session**, pas le seul
+            // lot demandé : un enregistrement isolé rattrape aussi les rejets
+            // en attente ailleurs, comme le fait déjà `syncableKeepers` pour
+            // les gardées pas encore rangées.
+            if let albumTitle = session.albumDestination.resolvedTitle {
+                let toRemove = session.items.filter { $0.decision == .reject && $0.inDestinationAlbum }
+                if !toRemove.isEmpty {
+                    await PhotoSaver.removeFromAlbum(toRemove, albumTitle: albumTitle)
+                    session.persistSoon()
+                }
+            }
+            outcome = Self.outcome(
+                of: result,
+                items: items,
+                requestedAlbum: session.albumDestination.resolvedTitle
+            )
         } catch {
             outcome = Outcome(errorMessage: error.localizedDescription)
         }
@@ -84,13 +109,23 @@ enum SaveFlow {
     }
 
     /// Revue UX (UX4) — issue heureuse → toast ; le moindre échec ou
-    /// empêchement → alerte (il faut le lire).
-    private static func outcome(of result: PhotoSaver.Result, items: [PhotoItem]) -> Outcome {
+    /// empêchement → alerte (il faut le lire). `requestedAlbum` est le titre
+    /// **demandé** pour ce lot (`nil` = aucun album voulu) : sert à détecter
+    /// le cas dégradé ci-dessous, distinct d'un lot où aucun album n'était
+    /// de toute façon demandé.
+    private static func outcome(
+        of result: PhotoSaver.Result,
+        items: [PhotoItem],
+        requestedAlbum: String?
+    ) -> Outcome {
         // Lot d'assets uniquement : « garder » = ajouter à l'album, le récap
         // nomme l'album ; sans lui, rien n'a eu lieu.
         if items.allSatisfy(\.isLibraryBacked) {
             guard let album = result.albumTitle else {
-                return Outcome(errorMessage: String(localized: "Ajout à l'album impossible (accès photothèque limité). Rien n'a été modifié."))
+                return Outcome(
+                    errorMessage: String(localized: "Ajout à l'album impossible (accès photothèque limité). Rien n'a été modifié."),
+                    offersSettingsShortcut: true
+                )
             }
             return Outcome(successToast: result.saved > 1
                 ? String(localized: "\(result.saved) photos ajoutées à « \(album) »")
@@ -102,6 +137,17 @@ enum SaveFlow {
                 return Outcome(errorMessage: String(localized: "L'enregistrement de \(item.filename) a échoué."))
             }
             return Outcome(errorMessage: String(localized: "\(result.saved) enregistrée(s), \(result.failed) en échec."))
+        }
+        // Lot avec au moins un fichier : la copie a toujours lieu et compte
+        // comme enregistrée, même si l'ajout à l'album qui suit échoue faute
+        // d'accès complet. Sans ce garde-fou, le toast disait juste
+        // « réussi » sans jamais dire que le rangement demandé n'avait pas
+        // eu lieu — un échec silencieux.
+        if let requestedAlbum, result.albumTitle == nil {
+            return Outcome(
+                errorMessage: String(localized: "\(result.saved) photo(s) enregistrée(s), mais pas ajoutée(s) à l'album « \(requestedAlbum) » (accès photothèque limité)."),
+                offersSettingsShortcut: true
+            )
         }
         // Retour Owen : le toast dit l'essentiel — « carte intacte » et
         // l'album de destination sont du détail (badge bleu, sheet Album).

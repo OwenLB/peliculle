@@ -16,6 +16,7 @@ struct FilterSheet: View {
     @Binding var sort: PhotoSort
     @Binding var sortAscending: Bool
     @Binding var groupByDay: Bool
+    @Binding var showOrientationBadge: Bool
 
     /// Les filtres, en **une seule valeur** (revue qualité) : les dix
     /// dimensions arrivaient en autant de bindings séparés.
@@ -147,6 +148,10 @@ struct FilterSheet: View {
             }
             Toggle(isOn: $groupByDay) {
                 Label("Grouper par jour", systemImage: "calendar")
+                    .foregroundStyle(.primary)
+            }
+            Toggle(isOn: $showOrientationBadge) {
+                Label("Afficher l'orientation", systemImage: "rectangle.portrait")
                     .foregroundStyle(.primary)
             }
             if hasGeolocated {

@@ -1,5 +1,8 @@
+import AVFoundation
+import Photos
 import SwiftUI
 import TipKit
+import UIKit
 
 /// F3 + F4 + F5 + F9 — viewer plein écran paginé sur l'ensemble **affiché**
 /// (respecte le filtre de la grille). Le défilement est porté par
@@ -58,6 +61,11 @@ struct FullScreenViewer: View {
     @State private var showExif = false
     @State private var isSavingCurrent = false
     @State private var saveError: String?
+    /// Vrai quand `saveError` vient d'un accès photothèque insuffisant
+    /// (`SaveFlow.Outcome.offersSettingsShortcut`) : l'alerte propose alors
+    /// Réglages plutôt qu'un simple OK. Sans rapport avec `DeleteFlow`, qui
+    /// partage la même alerte mais jamais ce cas — remis à faux à son message.
+    @State private var saveErrorOffersSettings = false
     /// Revue UX (UX4), aligné sur la grille par la factorisation `SaveFlow` :
     /// succès en toast qui s'efface seul, échec en alerte (`saveError`).
     @State private var successToast: String?
@@ -86,6 +94,7 @@ struct FullScreenViewer: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.openURL) private var openURL
     /// Idée 23 — ② : un enregistrement qui se termine hors écran envoie son
     /// récap en notification (via `SaveFlow`).
     @Environment(\.scenePhase) private var scenePhase
@@ -138,7 +147,7 @@ struct FullScreenViewer: View {
     private var activeBadges: [StatusBadgeKind] {
         var badges: [StatusBadgeKind] = []
         if currentItem.decision != .undecided { badges.append(.decision) }
-        if currentItem.savedToLibrary { badges.append(.saved) }
+        if currentItem.savedToLibrary || currentItem.isLibraryBacked { badges.append(.saved) }
         if currentItem.rating > 0 { badges.append(.rating) }
         return badges
     }
@@ -295,27 +304,36 @@ struct FullScreenViewer: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    // Partage et export d'originaux : sources fichier
-                    // uniquement (une photo de la photothèque se partage
-                    // depuis Photos).
+                    // Partager : les deux sources. Un fichier a une URL toute
+                    // prête (`ShareLink` direct) ; un asset photothèque n'en a
+                    // pas — l'item à partager se prépare de façon asynchrone
+                    // (voir `shareCurrentLibraryItem`).
                     if let url = currentItem.url {
                         ShareLink(item: url) {
                             Label("Partager", systemImage: "square.and.arrow.up")
                         }
+                    } else {
+                        Button {
+                            Task { await shareCurrentLibraryItem() }
+                        } label: {
+                            Label("Partager", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                    // Export d'originaux vers Fichiers : réservé aux sources
+                    // fichier — un asset photothèque n'a rien à « exporter »,
+                    // il est déjà géré par l'app Photos.
+                    if currentItem.url != nil {
                         Button {
                             showExport = true
                         } label: {
                             Label("Exporter vers Fichiers", systemImage: "folder")
                         }
                     }
-                    Button {
-                        saveAfterAlbumSetup = false
-                        showAlbumSettings = true
-                    } label: {
-                        // Libellé court (tenir sur une ligne de menu) — le
-                        // titre de la sheet garde le nom complet.
-                        Label("Album", systemImage: "photo.stack")
-                    }
+                    // Pas d'entrée « Album » ici (retour Owen) : c'est un
+                    // réglage de **session**, pas de cette photo — géré
+                    // depuis la grille (⚙️ Réglages, ou la confirmation au
+                    // premier enregistrement via `showAlbumSettings`, encore
+                    // câblée plus bas).
                     Button(role: .destructive) {
                         confirmDelete = true
                     } label: {
@@ -412,6 +430,14 @@ struct FullScreenViewer: View {
             }
         }
         .alert("Peliculle", isPresented: Binding(isPresenting: $saveError)) {
+            if saveErrorOffersSettings {
+                Button("Réglages") {
+                    saveError = nil
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                }
+            }
             Button("OK", role: .cancel) { saveError = nil }
         } message: {
             Text(saveError ?? "")
@@ -528,7 +554,7 @@ struct FullScreenViewer: View {
         case .decision:
             DecisionBadge(decision: currentItem.decision, font: .footnote)
         case .saved:
-            SavedBadge(font: .footnote)
+            SavedBadge(font: .footnote, native: currentItem.isLibraryBacked)
         case .rating:
             RatingBadge(rating: currentItem.rating)
         }
@@ -631,12 +657,24 @@ struct FullScreenViewer: View {
                 isAppActive: scenePhase == .active
             )
             if let message = outcome.errorMessage {
+                saveErrorOffersSettings = outcome.offersSettingsShortcut
                 saveError = message
             } else {
                 successToast = outcome.successToast
                 hapticTrigger += 1
             }
         }
+    }
+
+    // MARK: - Partage (source photothèque)
+
+    /// Prépare l'item à partager pour un asset photothèque (`PhotoSharing`,
+    /// partagé avec le menu contextuel de la grille), puis présente la
+    /// feuille système.
+    private func shareCurrentLibraryItem() async {
+        let items = await PhotoSharing.libraryItems(for: currentItem)
+        guard !items.isEmpty else { return }
+        PhotoSharing.present(items)
     }
 
     // MARK: - Contrôles bas (mode tri)
@@ -910,6 +948,7 @@ struct FullScreenViewer: View {
             // Dialogue système refusé : un choix, pas un échec — rien à dire.
             guard !outcome.cancelled else { return }
             if let message = outcome.errorMessage {
+                saveErrorOffersSettings = false
                 saveError = message
                 return
             }
@@ -927,3 +966,4 @@ struct FullScreenViewer: View {
         }
     }
 }
+

@@ -32,6 +32,9 @@ final class SessionStore {
         /// « Référence » (pick) de la photo. Optionnel → décodable depuis les
         /// fichiers d'avant cette feature (absent = pas une référence).
         var isReference: Bool?
+        /// Appartenance actuelle à l'album de destination. Optionnel → décodable
+        /// depuis les fichiers d'avant cette feature (absent = pas dans l'album).
+        var inDestinationAlbum: Bool?
     }
 
     private nonisolated struct Payload: Codable {
@@ -317,6 +320,7 @@ final class SessionStore {
             item.savedToLibrary = record.savedToLibrary
             item.savedAssetID = record.savedAssetID
             item.isReference = record.isReference ?? false
+            item.inDestinationAlbum = record.inDestinationAlbum ?? false
             if record.decision != .undecided || record.rating > 0 { restored += 1 }
         }
         return restored
@@ -331,7 +335,8 @@ final class SessionStore {
     func save(_ items: [PhotoItem], album: AlbumDestination, albumConfirmed: Bool, trip: TripMode) {
         var snapshot: [String: Record] = [:]
         for item in items {
-            guard item.decision != .undecided || item.rating > 0 || item.savedToLibrary || item.isReference else {
+            guard item.decision != .undecided || item.rating > 0 || item.savedToLibrary
+                || item.isReference || item.inDestinationAlbum else {
                 continue
             }
             snapshot[Self.key(for: item)] = Record(
@@ -339,7 +344,8 @@ final class SessionStore {
                 rating: item.rating,
                 savedToLibrary: item.savedToLibrary,
                 savedAssetID: item.savedAssetID,
-                isReference: item.isReference
+                isReference: item.isReference,
+                inDestinationAlbum: item.inDestinationAlbum
             )
         }
         records = snapshot
@@ -358,13 +364,20 @@ final class SessionStore {
     /// déjà triée au lieu de « non triée » (voir `CullSession.mirrorToLibraryIfNeeded`,
     /// ROADMAP « Dette connue »). `savedToLibrary` vaut toujours vrai : cette
     /// copie **est**, par construction, déjà dans la photothèque.
-    func upsertRecord(assetLocalIdentifier id: String, decision: CullDecision, rating: Int, isReference: Bool) {
+    func upsertRecord(
+        assetLocalIdentifier id: String,
+        decision: CullDecision,
+        rating: Int,
+        isReference: Bool,
+        inDestinationAlbum: Bool
+    ) {
         records[Self.assetKeyPrefix + id] = Record(
             decision: decision,
             rating: rating,
             savedToLibrary: true,
             savedAssetID: nil,
-            isReference: isReference
+            isReference: isReference,
+            inDestinationAlbum: inDestinationAlbum
         )
         writeToDisk()
     }

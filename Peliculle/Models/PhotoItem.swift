@@ -89,6 +89,14 @@ final class PhotoItem: Identifiable {
     /// créé) ou une copie d'avant ce batch.
     var savedAssetID: String?
 
+    /// Vrai si la photo est **actuellement** membre de l'album de
+    /// destination — distinct de `savedToLibrary`, qui dit seulement « une
+    /// copie existe dans la pellicule » (source externe). Contrairement à
+    /// `savedToLibrary`, celui-ci peut redevenir faux : retirée de l'album au
+    /// retrait différé d'une rejetée (voir `SaveFlow`), ou par réconciliation
+    /// si retirée depuis l'app Photos elle-même.
+    var inDestinationAlbum: Bool = false
+
     /// Source de provenance de la photo dans la session (Batch H5). Posée à la
     /// **composition** de la session (`CullSession`) : c'est elle qui porte le
     /// support réel (carte SD, disque, iCloud, album, photothèque) là où le
@@ -130,10 +138,15 @@ final class PhotoItem: Identifiable {
     /// vue », au regroupement par jour et au Mode Voyage.
     var captureDate: Date? { exif?.captureDate ?? fileDate }
 
-    /// Orientation d'affichage (portrait / paysage), connue dès que l'EXIF est
-    /// indexé — immédiatement pour un asset (dimensions portées par `PHAsset`),
-    /// après la passe d'index pour un fichier. Nil tant qu'inconnue.
-    var orientation: PhotoOrientation? { exif?.orientation }
+    /// Orientation d'affichage (portrait / paysage) — source agnostique :
+    /// EXIF pour une photo, `videoAspect` pour un clip (même règle que
+    /// `PhotoOrientation` : largeur ≥ hauteur = paysage). Nil tant
+    /// qu'aucune des deux n'est encore connue.
+    var orientation: PhotoOrientation? {
+        if let exifOrientation = exif?.orientation { return exifOrientation }
+        guard let videoAspect else { return nil }
+        return videoAspect >= 1 ? .landscape : .portrait
+    }
 
     // Inits `nonisolated` : les items naissent dans les tâches détachées
     // d'énumération (`FolderAccess`, `PhotoLibrarySource`), hors main actor.
